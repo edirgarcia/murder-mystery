@@ -31,6 +31,7 @@ class CreateGameRequest(BaseModel):
 
 class StartGameRequest(BaseModel):
     difficulty: Difficulty = Difficulty.MEDIUM
+    timer_minutes: int = Field(default=10, ge=5, le=30)
 
 
 class JoinGameRequest(BaseModel):
@@ -47,7 +48,6 @@ class GuessRequest(BaseModel):
 class PlayerInfo(BaseModel):
     id: str
     name: str
-    is_host: bool
 
 
 class GameInfo(BaseModel):
@@ -59,6 +59,10 @@ class GameInfo(BaseModel):
     character_names: list[str] = []
     murder_weapon: str | None = None
     difficulty: str | None = None
+    host_name: str = ""
+    timer_duration_seconds: int | None = None
+    started_at: str | None = None
+    guesses_count: int = 0
 
 
 class ClueInfo(BaseModel):
@@ -72,21 +76,28 @@ class PlayerCardResponse(BaseModel):
 
 
 class GuessResponse(BaseModel):
+    status: str
+    guessed_at: str
+
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    player_name: str
+    suspect_guessed: str
     correct: bool
-    suspect_name: str
-    actual_murderer: str | None = None
+    time_taken_seconds: float | None = None
 
 
-class SolutionResponse(BaseModel):
+class ResultsResponse(BaseModel):
     murderer_name: str
     murder_weapon: str
-    solution: dict[str, list[str]]
+    leaderboard: list[LeaderboardEntry]
     murder_clues: list[ClueInfo]
 
 
 class CreateGameResponse(BaseModel):
     code: str
-    player_id: str
+    host_id: str
 
 
 class JoinGameResponse(BaseModel):

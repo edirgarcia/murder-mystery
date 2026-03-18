@@ -1,136 +1,118 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, useGameActions } from "../context/GameContext";
-import { getSolution } from "../api/http";
+import { getResults } from "../api/http";
+import type { ResultsResponse } from "../types/game";
 
 export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setSolution } = useGameActions();
-  const [loading, setLoading] = useState(false);
+  const { setPhase } = useGameActions();
+  const [results, setResults] = useState<ResultsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!code || state.phase !== "finished") return;
-    setLoading(true);
-    getSolution(code)
-      .then((sol) => {
-        setSolution(sol);
+    if (!code) return;
+    // If we're not finished yet, set phase and try to fetch
+    setPhase("finished");
+    getResults(code)
+      .then((r) => {
+        setResults(r);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [code, state.phase]);
+  }, [code]);
 
-  const result = state.guessResult;
-  const solution = state.solution;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-mystery-400 text-xl">Loading results...</p>
+      </div>
+    );
+  }
+
+  if (!results) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-mystery-400 text-xl">Results not available yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-md mx-auto space-y-6">
-        {result && (
-          <div
-            className={`rounded-2xl p-6 text-center ${
-              result.correct ? "bg-green-900/50" : "bg-red-900/50"
-            }`}
-          >
-            <h2 className="text-3xl font-bold mb-2">
-              {result.correct ? "Correct!" : "Wrong!"}
-            </h2>
-            <p className="text-lg">
-              You accused: <strong>{result.suspect}</strong>
-            </p>
-            {result.murderer && (
-              <p className="text-mystery-300 mt-1">
-                The murderer was: <strong>{result.murderer}</strong>
+        <div className="bg-mystery-800 rounded-2xl p-6 text-center">
+          <p className="text-mystery-400 text-sm uppercase tracking-wider">
+            The Murderer
+          </p>
+          <h3 className="text-3xl font-bold text-red-400 mt-1">
+            {results.murderer_name}
+          </h3>
+          <p className="text-mystery-300 mt-1">
+            with the {results.murder_weapon}
+          </p>
+        </div>
+
+        <div className="bg-mystery-800 rounded-2xl p-6 shadow-xl">
+          <h4 className="text-mystery-300 font-semibold mb-4">Leaderboard</h4>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-mystery-400 text-left">
+                <th className="py-1 pr-2">#</th>
+                <th className="py-1 pr-2">Player</th>
+                <th className="py-1 pr-2">Suspect</th>
+                <th className="py-1 pr-2">Result</th>
+                <th className="py-1">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.leaderboard.map((entry) => {
+                const isMe = entry.player_name === state.playerName;
+                return (
+                  <tr
+                    key={entry.rank}
+                    className={`border-t border-mystery-700 ${isMe ? "bg-mystery-700/30" : ""}`}
+                  >
+                    <td className="py-2 pr-2 text-mystery-400">{entry.rank}</td>
+                    <td className="py-2 pr-2 text-mystery-200 font-medium">
+                      {entry.player_name}
+                      {isMe && <span className="text-mystery-400 text-xs ml-1">(you)</span>}
+                    </td>
+                    <td className="py-2 pr-2 text-mystery-300">{entry.suspect_guessed}</td>
+                    <td className="py-2 pr-2">
+                      <span className={entry.correct ? "text-green-400" : "text-red-400"}>
+                        {entry.correct ? "Correct" : "Wrong"}
+                      </span>
+                    </td>
+                    <td className="py-2 text-mystery-400">
+                      {entry.time_taken_seconds != null
+                        ? `${Math.floor(entry.time_taken_seconds)}s`
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {results.murder_clues.length > 0 && (
+          <div className="bg-mystery-800 rounded-2xl p-6">
+            <h4 className="text-mystery-300 font-semibold mb-3">
+              Murder Clues
+            </h4>
+            {results.murder_clues.map((clue, i) => (
+              <p key={i} className="text-mystery-200 text-sm mb-1">
+                {clue.text}
               </p>
-            )}
+            ))}
           </div>
-        )}
-
-        {!result && state.phase !== "finished" && (
-          <div className="text-center">
-            <p className="text-mystery-400 text-xl">
-              Waiting for all players to guess...
-            </p>
-          </div>
-        )}
-
-        {state.phase === "finished" && solution && (
-          <div className="space-y-4">
-            <div className="bg-mystery-800 rounded-2xl p-6 text-center">
-              <p className="text-mystery-400 text-sm uppercase tracking-wider">
-                The Murderer
-              </p>
-              <h3 className="text-3xl font-bold text-red-400 mt-1">
-                {solution.murderer_name}
-              </h3>
-              <p className="text-mystery-300 mt-1">
-                with the {solution.murder_weapon}
-              </p>
-            </div>
-
-            <div className="bg-mystery-800 rounded-2xl p-6">
-              <h4 className="text-mystery-300 font-semibold mb-3">
-                Murder Clues
-              </h4>
-              {solution.murder_clues.map((clue, i) => (
-                <p key={i} className="text-mystery-200 text-sm mb-1">
-                  {clue.text}
-                </p>
-              ))}
-            </div>
-
-            <div className="bg-mystery-800 rounded-2xl p-6">
-              <h4 className="text-mystery-300 font-semibold mb-3">
-                Full Solution
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-mystery-400">
-                      <th className="text-left py-1 pr-3">Category</th>
-                      {Array.from(
-                        {
-                          length:
-                            Object.values(solution.solution)[0]?.length ?? 0,
-                        },
-                        (_, i) => (
-                          <th key={i} className="text-left py-1 px-2">
-                            #{i + 1}
-                          </th>
-                        )
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(solution.solution).map(([cat, vals]) => (
-                      <tr key={cat} className="border-t border-mystery-700">
-                        <td className="py-1 pr-3 text-mystery-400 capitalize">
-                          {cat.replace("_", " ")}
-                        </td>
-                        {vals.map((v, i) => (
-                          <td key={i} className="py-1 px-2 text-mystery-200">
-                            {v}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {loading && (
-          <p className="text-center text-mystery-400">Loading solution...</p>
         )}
 
         <button
-          onClick={() => {
-            navigate("/");
-            // Full reset would be needed
-          }}
+          onClick={() => navigate("/")}
           className="w-full py-3 rounded-xl bg-mystery-700 hover:bg-mystery-600 text-white font-semibold text-lg transition"
         >
           Play Again

@@ -1,28 +1,28 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createGame, joinGame, getGameInfo } from "../api/http";
 import { useGameActions } from "../context/GameContext";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setGame, setPlayers } = useGameActions();
   const [name, setName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
+  const [joinCode, setJoinCode] = useState(searchParams.get("join")?.toUpperCase() ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleCreate() {
-    if (!name.trim()) return setError("Enter your name");
+    const hostName = name.trim() || "Host";
     setLoading(true);
     setError("");
     try {
-      const { code, player_id } = await createGame(name.trim());
-      localStorage.setItem("player_id", player_id);
+      const { code, host_id } = await createGame(hostName);
+      localStorage.setItem("player_id", host_id);
       localStorage.setItem("game_code", code);
-      setGame(code, player_id, name.trim(), true);
-      const info = await getGameInfo(code);
-      setPlayers(info.players);
-      navigate(`/lobby/${code}`);
+      localStorage.setItem("is_host", "true");
+      setGame(code, host_id, hostName, true);
+      navigate(`/dashboard/${code}`);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -40,6 +40,7 @@ export default function HomePage() {
       const { player_id } = await joinGame(code, name.trim());
       localStorage.setItem("player_id", player_id);
       localStorage.setItem("game_code", code);
+      localStorage.setItem("is_host", "false");
       setGame(code, player_id, name.trim(), false);
       const info = await getGameInfo(code);
       setPlayers(info.players);
@@ -62,6 +63,24 @@ export default function HomePage() {
         </div>
 
         <div className="bg-mystery-800 rounded-2xl p-6 space-y-4 shadow-xl">
+          {!joinCode && (
+            <>
+              <button
+                onClick={handleCreate}
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition disabled:opacity-50"
+              >
+                {loading ? "..." : "Create Game"}
+              </button>
+
+              <div className="flex items-center gap-3">
+                <hr className="flex-1 border-mystery-600" />
+                <span className="text-mystery-400 text-sm">or join</span>
+                <hr className="flex-1 border-mystery-600" />
+              </div>
+            </>
+          )}
+
           <input
             type="text"
             placeholder="Your name"
@@ -70,20 +89,6 @@ export default function HomePage() {
             onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-3 rounded-xl bg-mystery-700 text-white placeholder-mystery-400 outline-none focus:ring-2 focus:ring-mystery-500 text-lg"
           />
-
-          <button
-            onClick={handleCreate}
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition disabled:opacity-50"
-          >
-            {loading ? "..." : "Create Game"}
-          </button>
-
-          <div className="flex items-center gap-3">
-            <hr className="flex-1 border-mystery-600" />
-            <span className="text-mystery-400 text-sm">or join</span>
-            <hr className="flex-1 border-mystery-600" />
-          </div>
 
           <div className="flex gap-2">
             <input

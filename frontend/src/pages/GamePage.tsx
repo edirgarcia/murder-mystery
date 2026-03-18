@@ -11,11 +11,19 @@ export default function GamePage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setCard, setPhase, setCharacterNames, setMurderWeapon } = useGameActions();
+  const { setCard, setPhase, setCharacterNames, setMurderWeapon, setTimerInfo } = useGameActions();
   const [loading, setLoading] = useState(true);
 
+  // Redirect hosts to dashboard
   useEffect(() => {
-    if (!code || !state.playerId) return;
+    if (state.isHost && code) {
+      navigate(`/dashboard/${code}`, { replace: true });
+      return;
+    }
+  }, [state.isHost, code, navigate]);
+
+  useEffect(() => {
+    if (!code || !state.playerId || state.isHost) return;
     Promise.all([
       getCard(code, state.playerId),
       getGameInfo(code),
@@ -27,13 +35,18 @@ export default function GamePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [code, state.playerId]);
+  }, [code, state.playerId, state.isHost]);
 
   const handleWSEvent = useCallback(
     (event: WSEvent) => {
       switch (event.event) {
-        case "guess_made":
-          // Could show a notification
+        case "timer_started":
+          if (event.data.started_at && event.data.duration_seconds) {
+            setTimerInfo(
+              event.data.started_at as string,
+              event.data.duration_seconds as number,
+            );
+          }
           break;
         case "game_over":
           setPhase("finished");
@@ -41,7 +54,7 @@ export default function GamePage() {
           break;
       }
     },
-    [code, navigate, setPhase]
+    [code, navigate, setPhase, setTimerInfo]
   );
 
   useWebSocket(code ?? null, state.playerId, handleWSEvent);

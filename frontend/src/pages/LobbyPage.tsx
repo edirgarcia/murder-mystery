@@ -2,17 +2,37 @@ import { useEffect, useCallback, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, useGameActions } from "../context/GameContext";
 import { useWebSocket } from "../hooks/useWebSocket";
-import { getGameInfo, startGame } from "../api/http";
-import type { Difficulty, WSEvent } from "../types/game";
+import { getGameInfo } from "../api/http";
+import type { WSEvent } from "../types/game";
 import PlayerList from "../components/PlayerList";
+import IntroSequence from "../components/IntroSequence";
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setPlayers, addPlayer, setPhase, setError } = useGameActions();
-  const [starting, setStarting] = useState(false);
-  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const { setGame, setPlayers, addPlayer, setPhase, setError, setTimerInfo } = useGameActions();
+  const [showIntro, setShowIntro] = useState(false);
+  const [introPlayerNames, setIntroPlayerNames] = useState<string[]>([]);
+  const [introWeapon, setIntroWeapon] = useState<string | null>(null);
+
+  // Restore game state from localStorage (handles page refresh / HMR)
+  useEffect(() => {
+    if (state.playerId || !code) return;
+    const storedId = localStorage.getItem("player_id");
+    const storedCode = localStorage.getItem("game_code");
+    const isHost = localStorage.getItem("is_host") === "true";
+    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
+      setGame(code, storedId, "", isHost);
+    }
+  }, [code, state.playerId, setGame]);
+
+  // Redirect hosts to dashboard
+  useEffect(() => {
+    if (state.isHost && code) {
+      navigate(`/dashboard/${code}`, { replace: true });
+    }
+  }, [state.isHost, code, navigate]);
 
   // Load game info on mount
   useEffect(() => {
@@ -21,6 +41,9 @@ export default function LobbyPage() {
       setPlayers(info.players);
       if (info.phase === "playing") {
         setPhase("playing");
+        if (info.started_at && info.timer_duration_seconds) {
+          setTimerInfo(info.started_at, info.timer_duration_seconds);
+        }
         navigate(`/game/${code}`);
       }
     });
@@ -33,7 +56,6 @@ export default function LobbyPage() {
           addPlayer({
             id: event.data.player_id as string,
             name: event.data.player_name as string,
-            is_host: false,
           });
           break;
         case "game_starting":
@@ -41,33 +63,34 @@ export default function LobbyPage() {
           break;
         case "game_started":
           setPhase("playing");
-          navigate(`/game/${code}`);
+          if (event.data.murder_weapon && event.data.player_names) {
+            setIntroWeapon(event.data.murder_weapon as string);
+            setIntroPlayerNames(event.data.player_names as string[]);
+            setShowIntro(true);
+          } else {
+            navigate(`/game/${code}`);
+          }
           break;
         case "generation_failed":
           setPhase("lobby");
           setError(event.data.error as string);
-          setStarting(false);
           break;
       }
     },
-    [code, navigate, addPlayer, setPhase, setError]
+    [code, navigate, addPlayer, setPhase, setError, setTimerInfo]
   );
 
   useWebSocket(code ?? null, state.playerId, handleWSEvent);
 
-  async function handleStart() {
-    if (!code || !state.playerId) return;
-    setStarting(true);
-    try {
-      await startGame(code, state.playerId, difficulty);
-    } catch (e: any) {
-      setError(e.message);
-      setStarting(false);
-    }
+  if (showIntro && introWeapon && introPlayerNames.length > 0) {
+    return (
+      <IntroSequence
+        playerNames={introPlayerNames}
+        murderWeapon={introWeapon}
+        onComplete={() => navigate(`/game/${code}`)}
+      />
+    );
   }
-
-  const canStart =
-    state.isHost && state.players.length >= 3 && !starting;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -86,7 +109,7 @@ export default function LobbyPage() {
 
         <div className="bg-mystery-800 rounded-2xl p-6 shadow-xl">
           <h3 className="text-mystery-300 font-semibold mb-3">
-            Players ({state.players.length}/6)
+            Players ({state.players.length})
           </h3>
           <PlayerList players={state.players} />
 
@@ -97,47 +120,13 @@ export default function LobbyPage() {
           )}
         </div>
 
-        {state.isHost && (
-          <>
-            <div className="bg-mystery-800 rounded-2xl p-4 shadow-xl">
-              <h3 className="text-mystery-300 font-semibold mb-3 text-sm">
-                Difficulty
-              </h3>
-              <div className="flex gap-2">
-                {(["easy", "medium", "hard", "harder", "hardest"] as const).map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDifficulty(d)}
-                    disabled={starting}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                      difficulty === d
-                        ? "bg-mystery-500 text-white"
-                        : "bg-mystery-700 text-mystery-400 hover:bg-mystery-600"
-                    } disabled:opacity-40`}
-                  >
-                    {d.charAt(0).toUpperCase() + d.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <p className="text-center text-mystery-400">
+          Waiting for the host to start the game...
+        </p>
 
-            <button
-              onClick={handleStart}
-              disabled={!canStart}
-              className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition disabled:opacity-40"
-            >
-              {starting
-                ? state.phase === "generating"
-                  ? "Generating puzzle..."
-                  : "Starting..."
-                : "Start Game"}
-            </button>
-          </>
-        )}
-
-        {!state.isHost && (
-          <p className="text-center text-mystery-400">
-            Waiting for the host to start the game...
+        {state.phase === "generating" && (
+          <p className="text-center text-mystery-300 animate-pulse">
+            Generating puzzle...
           </p>
         )}
 

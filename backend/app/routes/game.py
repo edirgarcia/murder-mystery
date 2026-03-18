@@ -1,29 +1,100 @@
-"""Game routes: start, get card, guess, get solution."""
+"""Game routes: start, get card, guess, end, results."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Header
 
 from ..config import MIN_PLAYERS
-from ..game_state import store
+from ..game_state import GuessRecord, store
 from ..models import (
     ClueInfo,
     GamePhase,
     GuessRequest,
     GuessResponse,
+    LeaderboardEntry,
     PlayerCardResponse,
-    SolutionResponse,
+    ResultsResponse,
     StartGameRequest,
 )
-from ..puzzle.pipeline import generate_puzzle
 from .ws import broadcast
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/games", tags=["game"])
+
+
+def _build_leaderboard(room) -> list[LeaderboardEntry]:
+    """Build a sorted leaderboard: correct+fastest first, then incorrect, then no-guess."""
+    entries: list[LeaderboardEntry] = []
+
+    for player in room.players:
+        guess = room.guesses.get(player.id)
+        if guess:
+            correct = guess.suspect_name == room.murderer_name
+            time_taken = None
+            if room.started_at:
+                time_taken = (guess.guessed_at - room.started_at).total_seconds()
+            entries.append(LeaderboardEntry(
+                rank=0,
+                player_name=player.name,
+                suspect_guessed=guess.suspect_name,
+                correct=correct,
+                time_taken_seconds=time_taken,
+            ))
+        else:
+            entries.append(LeaderboardEntry(
+                rank=0,
+                player_name=player.name,
+                suspect_guessed="—",
+                correct=False,
+                time_taken_seconds=None,
+            ))
+
+    # Sort: correct+fastest first, then incorrect by time, then no-guess
+    def sort_key(e: LeaderboardEntry):
+        if e.correct:
+            return (0, e.time_taken_seconds or 0)
+        if e.time_taken_seconds is not None:
+            return (1, e.time_taken_seconds)
+        return (2, 0)
+
+    entries.sort(key=sort_key)
+    for i, e in enumerate(entries):
+        e.rank = i + 1
+
+    return entries
+
+
+async def _finish_game(room) -> None:
+    """End the game: set phase, cancel timer, broadcast leaderboard."""
+    room.phase = GamePhase.FINISHED
+    if room.timer_task and not room.timer_task.done():
+        room.timer_task.cancel()
+        room.timer_task = None
+
+    leaderboard = _build_leaderboard(room)
+    await broadcast(
+        room,
+        "game_over",
+        {
+            "murderer": room.murderer_name,
+            "leaderboard": [e.model_dump() for e in leaderboard],
+        },
+    )
+
+
+async def _timer_expire(room) -> None:
+    """Sleep for the game duration, then finish the game."""
+    try:
+        await asyncio.sleep(room.duration_seconds)
+        if room.phase == GamePhase.PLAYING:
+            await _finish_game(room)
+    except asyncio.CancelledError:
+        pass
 
 
 @router.post("/{code}/start")
@@ -40,8 +111,7 @@ async def start_game(
     if not room:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    player = store.get_player(room, x_player_id)
-    if not player or not player.is_host:
+    if not store.is_host(room, x_player_id):
         raise HTTPException(status_code=403, detail="Only the host can start the game")
 
     if room.phase != GamePhase.LOBBY:
@@ -76,9 +146,37 @@ async def start_game(
     room.cards = puzzle.cards
     room.murder_clue_dicts = [c.to_dict() for c in puzzle.murder_clues]
     room.phase = GamePhase.PLAYING
+    room.duration_seconds = req.timer_minutes * 60
 
-    await broadcast(room, "game_started", {"message": "The game has begun!"})
+    await broadcast(room, "game_started", {
+        "message": "The game has begun!",
+        "murder_weapon": room.murder_weapon,
+        "player_names": [p.name for p in room.players],
+    })
     return {"status": "started"}
+
+
+@router.post("/{code}/begin")
+async def begin_game(code: str, x_player_id: str = Header(...)) -> dict:
+    """Start the countdown timer. Called by the host after the intro sequence."""
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can begin the timer")
+    if room.phase != GamePhase.PLAYING:
+        raise HTTPException(status_code=400, detail="Game not in playing phase")
+    if room.started_at:
+        raise HTTPException(status_code=400, detail="Timer already started")
+
+    room.started_at = datetime.now(timezone.utc)
+    room.timer_task = asyncio.create_task(_timer_expire(room))
+
+    await broadcast(room, "timer_started", {
+        "started_at": room.started_at.isoformat(),
+        "duration_seconds": room.duration_seconds,
+    })
+    return {"status": "timer_started"}
 
 
 @router.get("/{code}/card", response_model=PlayerCardResponse)
@@ -88,6 +186,10 @@ async def get_card(code: str, x_player_id: str = Header(...)) -> PlayerCardRespo
         raise HTTPException(status_code=404, detail="Game not found")
     if room.phase not in (GamePhase.PLAYING, GamePhase.FINISHED):
         raise HTTPException(status_code=400, detail="Game not in progress")
+
+    # Host cannot get a card
+    if store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Host does not have a character card")
 
     card = store.get_player_card(room, x_player_id)
     if not card:
@@ -109,49 +211,73 @@ async def make_guess(
     if room.phase != GamePhase.PLAYING:
         raise HTTPException(status_code=400, detail="Game not in guess phase")
 
+    # Host cannot guess
+    if store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Host cannot guess")
+
     player = store.get_player(room, x_player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
 
-    room.guesses[player.id] = req.suspect_name
-    correct = req.suspect_name == room.murderer_name
+    if player.id in room.guesses:
+        raise HTTPException(status_code=400, detail="Already guessed")
+
+    now = datetime.now(timezone.utc)
+    room.guesses[player.id] = GuessRecord(suspect_name=req.suspect_name, guessed_at=now)
 
     await broadcast(
         room,
         "guess_made",
-        {"player_name": player.name, "suspect": req.suspect_name, "correct": correct},
+        {
+            "player_name": player.name,
+            "guesses_count": len(room.guesses),
+            "total_players": len(room.players),
+        },
     )
 
-    # Check if all players have guessed
+    # Auto-end if all players have guessed
     if len(room.guesses) >= len(room.players):
-        room.phase = GamePhase.FINISHED
-        await broadcast(
-            room,
-            "game_over",
-            {"murderer": room.murderer_name},
-        )
+        await _finish_game(room)
 
     return GuessResponse(
-        correct=correct,
-        suspect_name=req.suspect_name,
-        actual_murderer=room.murderer_name if correct or room.phase == GamePhase.FINISHED else None,
+        status="locked_in",
+        guessed_at=now.isoformat(),
     )
 
 
-@router.get("/{code}/solution", response_model=SolutionResponse)
-async def get_solution(code: str) -> SolutionResponse:
+@router.post("/{code}/end")
+async def end_game(code: str, x_player_id: str = Header(...)) -> dict:
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can end the game")
+    if room.phase != GamePhase.PLAYING:
+        raise HTTPException(status_code=400, detail="Game not in progress")
+
+    await _finish_game(room)
+    return {"status": "finished"}
+
+
+@router.get("/{code}/results", response_model=ResultsResponse)
+async def get_results(code: str) -> ResultsResponse:
     room = store.get_room(code)
     if not room:
         raise HTTPException(status_code=404, detail="Game not found")
     if room.phase != GamePhase.FINISHED:
         raise HTTPException(status_code=400, detail="Game not finished yet")
 
-    return SolutionResponse(
+    leaderboard = _build_leaderboard(room)
+    return ResultsResponse(
         murderer_name=room.murderer_name or "",
         murder_weapon=room.murder_weapon or "",
-        solution=room.solution or {},
+        leaderboard=leaderboard,
         murder_clues=[
             ClueInfo(type=c["type"], text=c["text"])
             for c in (room.murder_clue_dicts or [])
         ],
     )
+
+
+# Keep import at bottom to avoid circular import issues
+from ..puzzle.pipeline import generate_puzzle  # noqa: E402

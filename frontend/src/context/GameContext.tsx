@@ -6,7 +6,7 @@ import {
   type ReactNode,
   type Dispatch,
 } from "react";
-import type { GamePhase, PlayerInfo, PlayerCard, ClueInfo } from "../types/game";
+import type { GamePhase, PlayerInfo, PlayerCard, ClueInfo, LeaderboardEntry } from "../types/game";
 
 interface GameState {
   code: string | null;
@@ -18,13 +18,11 @@ interface GameState {
   characterNames: string[];
   murderWeapon: string | null;
   card: PlayerCard | null;
-  guessResult: { correct: boolean; suspect: string; murderer?: string } | null;
-  solution: {
-    murderer_name: string;
-    murder_weapon: string;
-    solution: Record<string, string[]>;
-    murder_clues: ClueInfo[];
-  } | null;
+  hasGuessed: boolean;
+  guessedAt: string | null;
+  leaderboard: LeaderboardEntry[] | null;
+  timerDurationSeconds: number | null;
+  startedAt: string | null;
   error: string | null;
 }
 
@@ -37,8 +35,9 @@ type GameAction =
   | { type: "SET_CHARACTER_NAMES"; names: string[] }
   | { type: "SET_MURDER_WEAPON"; weapon: string | null }
   | { type: "SET_CARD"; card: PlayerCard }
-  | { type: "SET_GUESS_RESULT"; result: GameState["guessResult"] }
-  | { type: "SET_SOLUTION"; solution: GameState["solution"] }
+  | { type: "SET_HAS_GUESSED"; guessedAt: string }
+  | { type: "SET_LEADERBOARD"; leaderboard: LeaderboardEntry[] }
+  | { type: "SET_TIMER_INFO"; startedAt: string; durationSeconds: number }
   | { type: "SET_ERROR"; error: string }
   | { type: "CLEAR_ERROR" }
   | { type: "RESET" };
@@ -53,8 +52,11 @@ const initialState: GameState = {
   characterNames: [],
   murderWeapon: null,
   card: null,
-  guessResult: null,
-  solution: null,
+  hasGuessed: false,
+  guessedAt: null,
+  leaderboard: null,
+  timerDurationSeconds: null,
+  startedAt: null,
   error: null,
 };
 
@@ -87,10 +89,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, murderWeapon: action.weapon };
     case "SET_CARD":
       return { ...state, card: action.card };
-    case "SET_GUESS_RESULT":
-      return { ...state, guessResult: action.result };
-    case "SET_SOLUTION":
-      return { ...state, solution: action.solution };
+    case "SET_HAS_GUESSED":
+      return { ...state, hasGuessed: true, guessedAt: action.guessedAt };
+    case "SET_LEADERBOARD":
+      return { ...state, leaderboard: action.leaderboard };
+    case "SET_TIMER_INFO":
+      return { ...state, startedAt: action.startedAt, timerDurationSeconds: action.durationSeconds };
     case "SET_ERROR":
       return { ...state, error: action.error };
     case "CLEAR_ERROR":
@@ -161,15 +165,20 @@ export function useGameActions() {
     [dispatch]
   );
 
-  const setGuessResult = useCallback(
-    (result: GameState["guessResult"]) =>
-      dispatch({ type: "SET_GUESS_RESULT", result }),
+  const setHasGuessed = useCallback(
+    (guessedAt: string) => dispatch({ type: "SET_HAS_GUESSED", guessedAt }),
     [dispatch]
   );
 
-  const setSolution = useCallback(
-    (solution: GameState["solution"]) =>
-      dispatch({ type: "SET_SOLUTION", solution }),
+  const setLeaderboard = useCallback(
+    (leaderboard: LeaderboardEntry[]) =>
+      dispatch({ type: "SET_LEADERBOARD", leaderboard }),
+    [dispatch]
+  );
+
+  const setTimerInfo = useCallback(
+    (startedAt: string, durationSeconds: number) =>
+      dispatch({ type: "SET_TIMER_INFO", startedAt, durationSeconds }),
     [dispatch]
   );
 
@@ -188,8 +197,9 @@ export function useGameActions() {
     setCharacterNames,
     setMurderWeapon,
     setCard,
-    setGuessResult,
-    setSolution,
+    setHasGuessed,
+    setLeaderboard,
+    setTimerInfo,
     setError,
     reset,
   };

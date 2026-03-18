@@ -5,6 +5,7 @@ import LobbyPage from "./pages/LobbyPage";
 import GamePage from "./pages/GamePage";
 import GuessPage from "./pages/GuessPage";
 import ResultPage from "./pages/ResultPage";
+import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/game/:code" element={<GamePage />} />
           <Route path="/guess/:code" element={<GuessPage />} />
           <Route path="/result/:code" element={<ResultPage />} />
+          <Route path="/dashboard/:code" element={<DashboardPage />} />
         </Routes>
       </BrowserRouter>
     </GameProvider>

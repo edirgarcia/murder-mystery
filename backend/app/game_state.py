@@ -6,9 +6,11 @@ is lost on server restart, which is fine for a party game.
 
 from __future__ import annotations
 
+import asyncio
 import random
 import string
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from fastapi import WebSocket
 
@@ -22,13 +24,20 @@ from .puzzle.generator import Solution
 class Player:
     id: str
     name: str
-    is_host: bool = False
+
+
+@dataclass
+class GuessRecord:
+    suspect_name: str
+    guessed_at: datetime
 
 
 @dataclass
 class GameRoom:
     code: str
     phase: GamePhase = GamePhase.LOBBY
+    host_id: str = ""
+    host_name: str = ""
     players: list[Player] = field(default_factory=list)
     # Set after puzzle generation
     solution: Solution | None = None
@@ -37,9 +46,13 @@ class GameRoom:
     cards: list[PlayerCard] | None = None
     murder_clue_dicts: list[dict] | None = None
     difficulty: str | None = None
-    # Player guesses: {player_id: suspect_name}
-    guesses: dict[str, str] = field(default_factory=dict)
-    # WebSocket connections: {player_id: WebSocket}
+    # Timer
+    started_at: datetime | None = None
+    duration_seconds: int = 600
+    timer_task: asyncio.Task | None = None
+    # Player guesses: {player_id: GuessRecord}
+    guesses: dict[str, GuessRecord] = field(default_factory=dict)
+    # WebSocket connections: {client_id: WebSocket}
     connections: dict[str, WebSocket] = field(default_factory=dict)
 
 
@@ -66,9 +79,15 @@ class GameStore:
     def get_room(self, code: str) -> GameRoom | None:
         return self._rooms.get(code.upper())
 
-    def add_player(self, room: GameRoom, name: str, is_host: bool = False) -> Player:
+    def set_host(self, room: GameRoom, name: str) -> str:
+        host_id = f"h_{random.randint(10000, 99999)}"
+        room.host_id = host_id
+        room.host_name = name
+        return host_id
+
+    def add_player(self, room: GameRoom, name: str) -> Player:
         player_id = f"p_{random.randint(10000, 99999)}"
-        player = Player(id=player_id, name=name, is_host=is_host)
+        player = Player(id=player_id, name=name)
         room.players.append(player)
         return player
 
@@ -77,6 +96,9 @@ class GameStore:
             if p.id == player_id:
                 return p
         return None
+
+    def is_host(self, room: GameRoom, client_id: str) -> bool:
+        return room.host_id == client_id
 
     def get_player_card(self, room: GameRoom, player_id: str) -> PlayerCard | None:
         if not room.cards:

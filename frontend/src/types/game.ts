@@ -3,7 +3,6 @@ export type GamePhase = "lobby" | "generating" | "playing" | "finished";
 export interface PlayerInfo {
   id: string;
   name: string;
-  is_host: boolean;
 }
 
 export type Difficulty = "easy" | "medium" | "hard" | "harder" | "hardest";
@@ -17,6 +16,10 @@ export interface GameInfo {
   character_names: string[];
   murder_weapon: string | null;
   difficulty: Difficulty | null;
+  host_name: string;
+  timer_duration_seconds: number | null;
+  started_at: string | null;
+  guesses_count: number;
 }
 
 export interface ClueInfo {
@@ -30,15 +33,22 @@ export interface PlayerCard {
 }
 
 export interface GuessResponse {
-  correct: boolean;
-  suspect_name: string;
-  actual_murderer: string | null;
+  status: string;
+  guessed_at: string;
 }
 
-export interface SolutionResponse {
+export interface LeaderboardEntry {
+  rank: number;
+  player_name: string;
+  suspect_guessed: string;
+  correct: boolean;
+  time_taken_seconds: number | null;
+}
+
+export interface ResultsResponse {
   murderer_name: string;
   murder_weapon: string;
-  solution: Record<string, string[]>;
+  leaderboard: LeaderboardEntry[];
   murder_clues: ClueInfo[];
 }
 

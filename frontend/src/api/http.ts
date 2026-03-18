@@ -3,7 +3,7 @@ import type {
   GameInfo,
   GuessResponse,
   PlayerCard,
-  SolutionResponse,
+  ResultsResponse,
 } from "../types/game";
 
 const BASE = "/api/games";
@@ -26,7 +26,7 @@ async function request<T>(
 
 export async function createGame(
   hostName: string
-): Promise<{ code: string; player_id: string }> {
+): Promise<{ code: string; host_id: string }> {
   return request(`${BASE}`, {
     method: "POST",
     body: JSON.stringify({ host_name: hostName }),
@@ -49,13 +49,17 @@ export async function getGameInfo(code: string): Promise<GameInfo> {
 
 export async function startGame(
   code: string,
-  playerId: string,
-  difficulty?: Difficulty
+  hostId: string,
+  difficulty?: Difficulty,
+  timerMinutes?: number
 ): Promise<void> {
   await request(`${BASE}/${code}/start`, {
     method: "POST",
-    headers: { "X-Player-Id": playerId },
-    body: JSON.stringify({ difficulty: difficulty ?? "medium" }),
+    headers: { "X-Player-Id": hostId },
+    body: JSON.stringify({
+      difficulty: difficulty ?? "medium",
+      timer_minutes: timerMinutes ?? 10,
+    }),
   });
 }
 
@@ -80,6 +84,26 @@ export async function makeGuess(
   });
 }
 
-export async function getSolution(code: string): Promise<SolutionResponse> {
-  return request(`${BASE}/${code}/solution`);
+export async function getResults(code: string): Promise<ResultsResponse> {
+  return request(`${BASE}/${code}/results`);
+}
+
+export async function beginGame(
+  code: string,
+  hostId: string
+): Promise<void> {
+  await request(`${BASE}/${code}/begin`, {
+    method: "POST",
+    headers: { "X-Player-Id": hostId },
+  });
+}
+
+export async function endGame(
+  code: string,
+  hostId: string
+): Promise<void> {
+  await request(`${BASE}/${code}/end`, {
+    method: "POST",
+    headers: { "X-Player-Id": hostId },
+  });
 }
