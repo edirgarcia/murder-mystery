@@ -14,11 +14,23 @@ class GamePhase(str, Enum):
     FINISHED = "finished"
 
 
+class Difficulty(str, Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+    HARDER = "harder"
+    HARDEST = "hardest"
+
+
 # --- Requests ---
 
 
 class CreateGameRequest(BaseModel):
     host_name: str = Field(..., min_length=1, max_length=30)
+
+
+class StartGameRequest(BaseModel):
+    difficulty: Difficulty = Difficulty.MEDIUM
 
 
 class JoinGameRequest(BaseModel):
@@ -46,6 +58,7 @@ class GameInfo(BaseModel):
     max_players: int
     character_names: list[str] = []
     murder_weapon: str | None = None
+    difficulty: str | None = None
 
 
 class ClueInfo(BaseModel):

@@ -16,6 +16,28 @@ from .solver import count_solutions_bounded, is_unique
 logger = logging.getLogger(__name__)
 
 
+def _weighted_sample(
+    rng: random.Random,
+    candidates: list[Clue],
+    weights: dict[str, float],
+    k: int,
+) -> list[Clue]:
+    """Sample up to *k* unique candidates using per-type weights."""
+    w = [weights.get(type(c).__name__, 1.0) for c in candidates]
+    # rng.choices allows repeats, so oversample then deduplicate
+    picked = rng.choices(candidates, weights=w, k=k * 2)
+    seen: set[int] = set()
+    unique: list[Clue] = []
+    for c in picked:
+        cid = id(c)
+        if cid not in seen:
+            seen.add(cid)
+            unique.append(c)
+            if len(unique) == k:
+                break
+    return unique
+
+
 def select_clues(
     n: int,
     solution: Solution,
@@ -24,6 +46,7 @@ def select_clues(
     max_iterations: int = 100,
     sample_size: int = 40,
     rng: random.Random | None = None,
+    clue_weights: dict[str, float] | None = None,
 ) -> list[Clue]:
     """Select clues until the puzzle has a unique solution, then prune.
 
@@ -38,11 +61,18 @@ def select_clues(
         max_iterations: Safety limit on selection rounds.
         sample_size: Number of candidates to evaluate per round.
         rng: Random number generator.
+        clue_weights: Optional per-type sampling weights (e.g.
+            {"Negation": 3.0, "PositionClue": 0.0}). Weight 0 excludes
+            the type entirely. None means uniform sampling.
     """
     rng = rng or random.Random()
     selected: list[Clue] = list(required_clues) if required_clues else []
     required_set = {id(c) for c in selected}
     remaining = [c for c in candidate_pool if id(c) not in required_set]
+
+    # Pre-filter candidates with weight 0
+    if clue_weights:
+        remaining = [c for c in remaining if clue_weights.get(type(c).__name__, 1.0) > 0]
 
     for iteration in range(max_iterations):
         if is_unique(n, selected):
@@ -50,7 +80,10 @@ def select_clues(
             break
 
         # Sample a subset of candidates to evaluate
-        batch = remaining[:sample_size] if len(remaining) <= sample_size else rng.sample(remaining, sample_size)
+        if clue_weights and len(remaining) > sample_size:
+            batch = _weighted_sample(rng, remaining, clue_weights, sample_size)
+        else:
+            batch = remaining[:sample_size] if len(remaining) <= sample_size else rng.sample(remaining, sample_size)
 
         best_clue = None
         best_count = float("inf")

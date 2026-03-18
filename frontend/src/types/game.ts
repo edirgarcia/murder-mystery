@@ -6,6 +6,8 @@ export interface PlayerInfo {
   is_host: boolean;
 }
 
+export type Difficulty = "easy" | "medium" | "hard" | "harder" | "hardest";
+
 export interface GameInfo {
   code: string;
   phase: GamePhase;
@@ -14,6 +16,7 @@ export interface GameInfo {
   max_players: number;
   character_names: string[];
   murder_weapon: string | null;
+  difficulty: Difficulty | null;
 }
 
 export interface ClueInfo {

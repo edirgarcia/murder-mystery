@@ -1,4 +1,5 @@
 import type {
+  Difficulty,
   GameInfo,
   GuessResponse,
   PlayerCard,
@@ -48,11 +49,13 @@ export async function getGameInfo(code: string): Promise<GameInfo> {
 
 export async function startGame(
   code: string,
-  playerId: string
+  playerId: string,
+  difficulty?: Difficulty
 ): Promise<void> {
   await request(`${BASE}/${code}/start`, {
     method: "POST",
     headers: { "X-Player-Id": playerId },
+    body: JSON.stringify({ difficulty: difficulty ?? "medium" }),
   });
 }
 

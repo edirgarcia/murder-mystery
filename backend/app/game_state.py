@@ -36,6 +36,7 @@ class GameRoom:
     murder_weapon: str | None = None
     cards: list[PlayerCard] | None = None
     murder_clue_dicts: list[dict] | None = None
+    difficulty: str | None = None
     # Player guesses: {player_id: suspect_name}
     guesses: dict[str, str] = field(default_factory=dict)
     # WebSocket connections: {player_id: WebSocket}

@@ -1,8 +1,11 @@
 """Murder chain logic.
 
-Generates 2-3 clues that form a deduction chain linking the murder weapon
+Generates clues that form a deduction chain linking the murder weapon
 to the murderer's identity. Players must combine these clues (spread across
 different cards) to figure out who the killer is.
+
+The chain length (number of hops) is controlled by difficulty:
+  weapon → intermediate₁ → ... → name
 """
 
 from __future__ import annotations
@@ -17,17 +20,20 @@ from .schema import NAME_CATEGORY, WEAPON_CATEGORY
 def generate_murder_clues(
     solution: Solution,
     rng: random.Random | None = None,
+    chain_hops: int | None = None,
 ) -> tuple[str, str, list[Clue]]:
     """Generate murder chain clues.
 
+    Args:
+        solution: The full puzzle solution.
+        rng: Random instance for reproducibility.
+        chain_hops: Number of links in the chain (weapon → ... → name).
+            Must be >= 2. The number of intermediate categories needed is
+            chain_hops - 1. If None, defaults to len(intermediates) + 1
+            (i.e. uses all available intermediate categories).
+
     Returns:
         (murderer_name, murder_weapon, list_of_murder_clues)
-
-    The chain works like:
-      weapon=<chosen> -> intermediate_cat=some_value (clue 1)
-      intermediate_cat=some_value -> name=murderer (clue 2)
-
-    For larger games (n>=5), add a 3-clue chain through two intermediates.
     """
     rng = rng or random.Random()
     n = len(solution[NAME_CATEGORY])
@@ -43,24 +49,31 @@ def generate_murder_clues(
     ]
     rng.shuffle(other_cats)
 
+    if chain_hops is None:
+        # Default: use all available intermediates + 1
+        chain_hops = len(other_cats) + 1
+
+    intermediates_needed = chain_hops - 1
+    if intermediates_needed > len(other_cats):
+        raise ValueError(
+            f"chain_hops={chain_hops} requires {intermediates_needed} intermediate "
+            f"categories, but only {len(other_cats)} available"
+        )
+
+    # Build chain: weapon → cat₁ → cat₂ → ... → name
+    chain_cats = other_cats[:intermediates_needed]
     clues: list[Clue] = []
 
-    if n >= 5 and len(other_cats) >= 2:
-        # 3-clue chain: weapon -> cat_a -> cat_b -> name
-        cat_a = other_cats[0]
-        cat_b = other_cats[1]
-        val_a = solution[cat_a][murder_pos]
-        val_b = solution[cat_b][murder_pos]
+    # First link: weapon → first intermediate
+    prev_cat = WEAPON_CATEGORY
+    prev_val = murder_weapon
+    for cat in chain_cats:
+        val = solution[cat][murder_pos]
+        clues.append(DirectEquality(prev_cat, prev_val, cat, val))
+        prev_cat = cat
+        prev_val = val
 
-        clues.append(DirectEquality(WEAPON_CATEGORY, murder_weapon, cat_a, val_a))
-        clues.append(DirectEquality(cat_a, val_a, cat_b, val_b))
-        clues.append(DirectEquality(cat_b, val_b, NAME_CATEGORY, murderer_name))
-    else:
-        # 2-clue chain: weapon -> cat_a -> name
-        cat_a = other_cats[0]
-        val_a = solution[cat_a][murder_pos]
-
-        clues.append(DirectEquality(WEAPON_CATEGORY, murder_weapon, cat_a, val_a))
-        clues.append(DirectEquality(cat_a, val_a, NAME_CATEGORY, murderer_name))
+    # Final link: last intermediate → name
+    clues.append(DirectEquality(prev_cat, prev_val, NAME_CATEGORY, murderer_name))
 
     return murderer_name, murder_weapon, clues

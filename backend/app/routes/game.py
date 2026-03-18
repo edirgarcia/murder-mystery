@@ -16,6 +16,7 @@ from ..models import (
     GuessResponse,
     PlayerCardResponse,
     SolutionResponse,
+    StartGameRequest,
 )
 from ..puzzle.pipeline import generate_puzzle
 from .ws import broadcast
@@ -26,7 +27,15 @@ router = APIRouter(prefix="/api/games", tags=["game"])
 
 
 @router.post("/{code}/start")
-async def start_game(code: str, x_player_id: str = Header(...)) -> dict:
+async def start_game(
+    code: str,
+    req: StartGameRequest | None = None,
+    x_player_id: str = Header(...),
+) -> dict:
+    if req is None:
+        req = StartGameRequest()
+    difficulty = req.difficulty.value
+
     room = store.get_room(code)
     if not room:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -44,6 +53,7 @@ async def start_game(code: str, x_player_id: str = Header(...)) -> dict:
             detail=f"Need at least {MIN_PLAYERS} players",
         )
 
+    room.difficulty = difficulty
     room.phase = GamePhase.GENERATING
     await broadcast(room, "game_starting", {"message": "Generating puzzle..."})
 
@@ -53,7 +63,7 @@ async def start_game(code: str, x_player_id: str = Header(...)) -> dict:
     loop = asyncio.get_running_loop()
     try:
         puzzle = await loop.run_in_executor(
-            None, lambda: generate_puzzle(n, player_names=player_names)
+            None, lambda: generate_puzzle(n, player_names=player_names, difficulty=difficulty)
         )
     except RuntimeError as e:
         room.phase = GamePhase.LOBBY

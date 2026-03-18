@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useGame, useGameActions } from "../context/GameContext";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { getGameInfo, startGame } from "../api/http";
-import type { WSEvent } from "../types/game";
+import type { Difficulty, WSEvent } from "../types/game";
 import PlayerList from "../components/PlayerList";
 
 export default function LobbyPage() {
@@ -12,6 +12,7 @@ export default function LobbyPage() {
   const { state } = useGame();
   const { setPlayers, addPlayer, setPhase, setError } = useGameActions();
   const [starting, setStarting] = useState(false);
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
   // Load game info on mount
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function LobbyPage() {
     if (!code || !state.playerId) return;
     setStarting(true);
     try {
-      await startGame(code, state.playerId);
+      await startGame(code, state.playerId, difficulty);
     } catch (e: any) {
       setError(e.message);
       setStarting(false);
@@ -89,25 +90,49 @@ export default function LobbyPage() {
           </h3>
           <PlayerList players={state.players} />
 
-          {state.players.length < 3 && (
+          {state.players.length < 4 && (
             <p className="text-mystery-400 text-sm mt-3 text-center">
-              Need at least 3 players to start
+              Need at least 4 players to start
             </p>
           )}
         </div>
 
         {state.isHost && (
-          <button
-            onClick={handleStart}
-            disabled={!canStart}
-            className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition disabled:opacity-40"
-          >
-            {starting
-              ? state.phase === "generating"
-                ? "Generating puzzle..."
-                : "Starting..."
-              : "Start Game"}
-          </button>
+          <>
+            <div className="bg-mystery-800 rounded-2xl p-4 shadow-xl">
+              <h3 className="text-mystery-300 font-semibold mb-3 text-sm">
+                Difficulty
+              </h3>
+              <div className="flex gap-2">
+                {(["easy", "medium", "hard", "harder", "hardest"] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDifficulty(d)}
+                    disabled={starting}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                      difficulty === d
+                        ? "bg-mystery-500 text-white"
+                        : "bg-mystery-700 text-mystery-400 hover:bg-mystery-600"
+                    } disabled:opacity-40`}
+                  >
+                    {d.charAt(0).toUpperCase() + d.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleStart}
+              disabled={!canStart}
+              className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition disabled:opacity-40"
+            >
+              {starting
+                ? state.phase === "generating"
+                  ? "Generating puzzle..."
+                  : "Starting..."
+                : "Start Game"}
+            </button>
+          </>
         )}
 
         {!state.isHost && (

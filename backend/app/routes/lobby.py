@@ -64,4 +64,5 @@ async def get_game(code: str) -> GameInfo:
         max_players=MAX_PLAYERS,
         character_names=character_names,
         murder_weapon=room.murder_weapon,
+        difficulty=room.difficulty,
     )

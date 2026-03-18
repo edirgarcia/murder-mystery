@@ -17,13 +17,14 @@ def generate_solution(
     n: int,
     rng: random.Random | None = None,
     player_names: list[str] | None = None,
+    difficulty: str = "medium",
 ) -> Solution:
     """Generate a random valid solution for *n* positions.
 
     Each category's values are randomly permuted across the n positions.
     """
     rng = rng or random.Random()
-    schema = get_schema(n, player_names=player_names)
+    schema = get_schema(n, player_names=player_names, difficulty=difficulty)
     solution: Solution = {}
     for cat, values in schema.items():
         perm = list(values)

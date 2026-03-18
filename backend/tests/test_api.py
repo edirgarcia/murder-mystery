@@ -91,6 +91,7 @@ class TestGameFlow:
 
         res = client.post(
             f"/api/games/{code}/start",
+            json={"difficulty": "medium"},
             headers={"X-Player-Id": host_id},
         )
         assert res.status_code == 200
@@ -113,6 +114,7 @@ class TestGameFlow:
         code, host_id, player_ids = self._create_full_game(client)
         client.post(
             f"/api/games/{code}/start",
+            json={"difficulty": "medium"},
             headers={"X-Player-Id": host_id},
         )
 
@@ -131,6 +133,7 @@ class TestGameFlow:
         code, host_id, player_ids = self._create_full_game(client)
         client.post(
             f"/api/games/{code}/start",
+            json={"difficulty": "medium"},
             headers={"X-Player-Id": host_id},
         )
 
@@ -151,6 +154,7 @@ class TestGameFlow:
         code, host_id, player_ids = self._create_full_game(client)
         client.post(
             f"/api/games/{code}/start",
+            json={"difficulty": "medium"},
             headers={"X-Player-Id": host_id},
         )
 
@@ -170,6 +174,7 @@ class TestGameFlow:
         code, host_id, player_ids = self._create_full_game(client)
         client.post(
             f"/api/games/{code}/start",
+            json={"difficulty": "medium"},
             headers={"X-Player-Id": host_id},
         )
 
