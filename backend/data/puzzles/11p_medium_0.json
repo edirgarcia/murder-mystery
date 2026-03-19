@@ -1,0 +1,497 @@
+{
+  "n": 11,
+  "difficulty": "medium",
+  "solution": {
+    "weapon": [
+      "Scissors",
+      "Candlestick",
+      "Rope",
+      "Dagger",
+      "Axe",
+      "Revolver",
+      "Wrench",
+      "Poison",
+      "Crossbow",
+      "Knife",
+      "Lead Pipe"
+    ],
+    "nationality": [
+      "Japanese",
+      "Korean",
+      "Spanish",
+      "German",
+      "Italian",
+      "Brazilian",
+      "Swedish",
+      "Colombian",
+      "French",
+      "British",
+      "Danish"
+    ],
+    "drink": [
+      "Lemonade",
+      "Espresso",
+      "Juice",
+      "Water",
+      "Cider",
+      "Milk",
+      "Cocoa",
+      "Soda",
+      "Coffee",
+      "Wine",
+      "Tea"
+    ],
+    "name": [
+      "Player 2",
+      "Player 6",
+      "Player 4",
+      "Player 11",
+      "Player 1",
+      "Player 10",
+      "Player 9",
+      "Player 3",
+      "Player 7",
+      "Player 8",
+      "Player 5"
+    ]
+  },
+  "murderer_name": "Player 4",
+  "murder_weapon": "Rope",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope is Spanish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Spanish person drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Player 4."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Axe is Italian."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Wrench is not Colombian."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Dagger lives to the left of the French person."
+    },
+    {
+      "type": "Ordering",
+      "text": "The British person lives to the left of Player 5."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Water drinker is Player 11."
+    },
+    {
+      "type": "Ordering",
+      "text": "The German person lives to the left of Player 9."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 1 is Player 2."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Wrench lives to the left of Player 5."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Poison does not drink Milk."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Scissors lives to the left of Player 11."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Dagger lives to the left of the Brazilian person."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 8 is Colombian."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Swedish person lives next to the Milk drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Rope lives to the left of Player 10."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Wrench is not Player 7."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Japanese person lives to the left of the Cider drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Candlestick lives to the left of the Spanish person."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Italian person lives to the left of the Milk drinker."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Knife is not Player 3."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 9 has the Crossbow."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 1 is Japanese."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Swedish person lives to the left of Player 3."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Axe lives next to the Brazilian person."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Rope lives next to Player 11."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Italian person lives to the left of the Soda drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Colombian person lives to the left of the Coffee drinker."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Dagger drinks Water."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Knife is not Swedish."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 11 has the Lead Pipe."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Axe is Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the Swedish person."
+    },
+    {
+      "type": "Negation",
+      "text": "The Swedish person is not Player 10."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Poison lives next to the Cocoa drinker."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Korean person drinks Espresso."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Candlestick lives next to the Juice drinker."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The French person is Player 7."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 10 is Player 8."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 11 drinks Tea."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Wine drinker lives next to Player 5."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope is Spanish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Spanish person drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Player 4."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Dagger drinks Water."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Swedish person lives next to the Milk drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Dagger lives to the left of the French person."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 11 drinks Tea."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Italian person lives to the left of the Soda drinker."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 6",
+      "clues": [
+        {
+          "type": "PositionClue",
+          "text": "The person in house 11 has the Lead Pipe."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 1 is Player 2."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Japanese person lives to the left of the Cider drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Swedish person lives next to the Milk drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Candlestick lives next to the Juice drinker."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The British person lives to the left of Player 5."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Knife is not Player 3."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Poison does not drink Milk."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Water drinker is Player 11."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 11",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the Swedish person."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 9 has the Crossbow."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Wrench is not Colombian."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The French person is Player 7."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Poison lives next to the Cocoa drinker."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Colombian person lives to the left of the Coffee drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Rope lives next to Player 11."
+        },
+        {
+          "type": "Ordering",
+          "text": "The German person lives to the left of Player 9."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Axe is Italian."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 10",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Italian person lives to the left of the Soda drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Axe lives next to the Brazilian person."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 8 is Colombian."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Korean person drinks Espresso."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Rope lives to the left of Player 10."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 9",
+      "clues": [
+        {
+          "type": "PositionClue",
+          "text": "The person in house 11 has the Lead Pipe."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Dagger lives to the left of the Brazilian person."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Juice drinker is Player 4."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Wrench lives to the left of Player 5."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person with the Candlestick lives to the left of the Spanish person."
+        },
+        {
+          "type": "Negation",
+          "text": "The Swedish person is not Player 10."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Dagger drinks Water."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Spanish person drinks Juice."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 7",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Axe is Player 1."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Wine drinker lives next to Player 5."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 1 is Japanese."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Scissors lives to the left of Player 11."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 8",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The person with the Wrench is not Player 7."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Poison lives next to the Cocoa drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The British person lives to the left of Player 5."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 10 is Player 8."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 5",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The person with the Knife is not Swedish."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Italian person lives to the left of the Milk drinker."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 1 is Japanese."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Swedish person lives to the left of Player 3."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Rope is Spanish."
+        }
+      ]
+    }
+  ]
+}

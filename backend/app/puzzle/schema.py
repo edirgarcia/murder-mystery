@@ -21,7 +21,7 @@ CATEGORIES: dict[str, list[str]] = {
         "British",
         "Swedish",
         "Danish",
-        "Norwegian",
+        "Colombian",
         "German",
         "French",
         "Italian",
@@ -83,9 +83,9 @@ CATEGORIES: dict[str, list[str]] = {
         "Poison",
         "Axe",
         "Crossbow",
-        "Garrote",
+        "Scissors",
         "Dagger",
-        "Mace",
+        "Meat Cleaver",
     ],
 }
 

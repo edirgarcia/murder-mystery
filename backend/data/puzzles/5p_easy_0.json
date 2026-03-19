@@ -1,0 +1,191 @@
+{
+  "n": 5,
+  "difficulty": "easy",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Rope",
+      "Lead Pipe",
+      "Knife",
+      "Candlestick"
+    ],
+    "nationality": [
+      "Swedish",
+      "British",
+      "Danish",
+      "German",
+      "Colombian"
+    ],
+    "drink": [
+      "Wine",
+      "Tea",
+      "Coffee",
+      "Milk",
+      "Juice"
+    ],
+    "name": [
+      "Player 4",
+      "Player 5",
+      "Player 1",
+      "Player 2",
+      "Player 3"
+    ]
+  },
+  "murderer_name": "Player 2",
+  "murder_weapon": "Knife",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife is German."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The German person drinks Milk."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Player 2."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 1 has the Revolver."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Danish person lives to the left of the Milk drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Lead Pipe lives to the left of the Milk drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Tea drinker lives to the left of Player 3."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Tea drinker lives to the left of Player 1."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 4 is Player 2."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The British person lives next to the Coffee drinker."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 1 drinks Wine."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Swedish person lives to the left of Player 5."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Rope lives next to Player 1."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife is German."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The German person drinks Milk."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Player 2."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Tea drinker lives to the left of Player 1."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife is German."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Swedish person lives to the left of Player 5."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 5",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Danish person lives to the left of the Milk drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Rope lives next to Player 1."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 4 is Player 2."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "PositionClue",
+          "text": "The person in house 1 has the Revolver."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 1 drinks Wine."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Tea drinker lives to the left of Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The German person drinks Milk."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Rope lives next to Player 1."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The British person lives next to the Coffee drinker."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Milk drinker is Player 2."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Lead Pipe lives to the left of the Milk drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Tea drinker lives to the left of Player 3."
+        }
+      ]
+    }
+  ]
+}

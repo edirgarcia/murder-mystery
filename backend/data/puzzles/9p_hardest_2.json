@@ -1,0 +1,590 @@
+{
+  "n": 9,
+  "difficulty": "hardest",
+  "solution": {
+    "weapon": [
+      "Lead Pipe",
+      "Knife",
+      "Rope",
+      "Poison",
+      "Crossbow",
+      "Axe",
+      "Revolver",
+      "Wrench",
+      "Candlestick"
+    ],
+    "nationality": [
+      "Spanish",
+      "Swedish",
+      "French",
+      "German",
+      "British",
+      "Italian",
+      "Danish",
+      "Japanese",
+      "Colombian"
+    ],
+    "drink": [
+      "Wine",
+      "Soda",
+      "Water",
+      "Coffee",
+      "Lemonade",
+      "Tea",
+      "Cocoa",
+      "Juice",
+      "Milk"
+    ],
+    "house_color": [
+      "Orange",
+      "Red",
+      "Purple",
+      "Blue",
+      "Yellow",
+      "White",
+      "Green",
+      "Pink",
+      "Ivory"
+    ],
+    "name": [
+      "Player 7",
+      "Player 6",
+      "Player 8",
+      "Player 5",
+      "Player 2",
+      "Player 3",
+      "Player 4",
+      "Player 1",
+      "Player 9"
+    ]
+  },
+  "murderer_name": "Player 9",
+  "murder_weapon": "Candlestick",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick drinks Milk."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person lives in the Ivory house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Ivory house is Player 9."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person in the Pink house lives next to Player 9."
+    },
+    {
+      "type": "Negation",
+      "text": "The Coffee drinker is not Player 2."
+    },
+    {
+      "type": "Negation",
+      "text": "The Coffee drinker does not live in the Red house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Knife lives to the left of the person in the Green house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The French person drinks Water."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Water drinker lives next to Player 5."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the Green house is not Player 2."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Knife lives to the left of the Coffee drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Poison lives to the left of the Danish person."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Poison is not British."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Knife lives to the left of the Cocoa drinker."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Wrench does not drink Tea."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person in the Yellow house lives to the left of Player 3."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the Green house is not Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Spanish person lives next to Player 6."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Revolver is not Italian."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Knife does not live in the White house."
+    },
+    {
+      "type": "Negation",
+      "text": "The Wine drinker does not live in the Yellow house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Spanish person lives to the left of the person in the White house."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the Green house is not Player 3."
+    },
+    {
+      "type": "Ordering",
+      "text": "The British person lives to the left of the person in the Green house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the Juice drinker."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the White house is not Player 5."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Poison is not Italian."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Knife lives to the left of the person in the Purple house."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Swedish person lives next to Player 7."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Japanese person lives to the left of the person in the Ivory house."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Danish person lives next to the person in the Pink house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Axe lives to the left of the Milk drinker."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person in the Purple house lives next to Player 5."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Knife does not live in the Yellow house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Italian person drinks Tea."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Spanish person lives to the left of Player 6."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Spanish person lives to the left of the person in the Red house."
+    },
+    {
+      "type": "Negation",
+      "text": "The Tea drinker is not Player 4."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Colombian person lives next to Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Swedish person lives to the left of the Lemonade drinker."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Juice drinker lives next to Player 9."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Soda drinker lives next to the person in the Purple house."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The German person lives next to the Water drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Coffee drinker lives to the left of Player 4."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Poison is not Player 8."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Wine drinker lives to the left of the person in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Lead Pipe lives in the Orange house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Crossbow lives to the left of the Tea drinker."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The French person is Player 8."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the Yellow house is not Player 5."
+    },
+    {
+      "type": "Negation",
+      "text": "The British person does not drink Cocoa."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Rope lives to the left of Player 2."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick drinks Milk."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person lives in the Ivory house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Ivory house is Player 9."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 7",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the Juice drinker."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The French person is Player 8."
+        },
+        {
+          "type": "Negation",
+          "text": "The Coffee drinker is not Player 2."
+        },
+        {
+          "type": "Negation",
+          "text": "The Wine drinker does not live in the Yellow house."
+        },
+        {
+          "type": "Negation",
+          "text": "The Coffee drinker does not live in the Red house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Knife lives to the left of the Coffee drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Knife lives to the left of the person in the Green house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 6",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The British person does not drink Cocoa."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Green house is not Player 1."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Italian person drinks Tea."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Swedish person lives next to Player 7."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Ivory house is Player 9."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Spanish person lives next to Player 6."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Spanish person lives to the left of the person in the Red house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 8",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The Wine drinker does not live in the Yellow house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the White house is not Player 5."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Water drinker lives next to Player 5."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The French person is Player 8."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Spanish person lives to the left of Player 6."
+        },
+        {
+          "type": "Ordering",
+          "text": "The British person lives to the left of the person in the Green house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Danish person lives next to the person in the Pink house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 5",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The person with the Poison is not Player 8."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Juice drinker lives next to Player 9."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Knife lives to the left of the Cocoa drinker."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Wrench does not drink Tea."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Wine drinker lives to the left of the person in the Blue house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Swedish person lives to the left of the Lemonade drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The British person lives to the left of the person in the Green house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Japanese person lives to the left of the person in the Ivory house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Danish person lives next to the person in the Pink house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The German person lives next to the Water drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person in the Pink house lives next to Player 9."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Spanish person lives to the left of the person in the White house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Colombian person lives next to Player 1."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Green house is not Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person in the Yellow house lives to the left of Player 3."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Soda drinker lives next to the person in the Purple house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Poison is not Player 8."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Green house is not Player 2."
+        },
+        {
+          "type": "Negation",
+          "text": "The Tea drinker is not Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Milk drinker is Colombian."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person in the Purple house lives next to Player 5."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The person with the Poison is not British."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Japanese person lives to the left of the person in the Ivory house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The French person drinks Water."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Crossbow lives to the left of the Tea drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person in the Purple house lives next to Player 5."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Knife lives to the left of the person in the Purple house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Poison is not Italian."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Coffee drinker lives to the left of Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick drinks Milk."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Poison lives to the left of the Danish person."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Lead Pipe lives in the Orange house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Rope lives to the left of Player 2."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Yellow house is not Player 5."
+        },
+        {
+          "type": "Negation",
+          "text": "The Coffee drinker is not Player 2."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 9",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Colombian person lives in the Ivory house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Green house is not Player 3."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Knife does not live in the White house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Knife does not live in the Yellow house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Axe lives to the left of the Milk drinker."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Revolver is not Italian."
+        }
+      ]
+    }
+  ]
+}

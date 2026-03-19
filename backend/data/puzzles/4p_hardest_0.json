@@ -1,0 +1,226 @@
+{
+  "n": 4,
+  "difficulty": "hardest",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Candlestick",
+      "Knife",
+      "Rope"
+    ],
+    "nationality": [
+      "Colombian",
+      "British",
+      "Danish",
+      "Swedish"
+    ],
+    "drink": [
+      "Tea",
+      "Milk",
+      "Juice",
+      "Coffee"
+    ],
+    "house_color": [
+      "Yellow",
+      "Red",
+      "Blue",
+      "Green"
+    ],
+    "pet": [
+      "Bird",
+      "Dog",
+      "Fish",
+      "Cat"
+    ],
+    "name": [
+      "Player 3",
+      "Player 2",
+      "Player 4",
+      "Player 1"
+    ]
+  },
+  "murderer_name": "Player 4",
+  "murder_weapon": "Knife",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife lives in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Blue house is Danish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Danish person drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker owns the Fish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Fish owner is Player 4."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the Yellow house does not own the Dog."
+    },
+    {
+      "type": "Negation",
+      "text": "The Coffee drinker does not own the Bird."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Swedish person lives in the Green house."
+    },
+    {
+      "type": "Negation",
+      "text": "The Dog owner is not Player 3."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Tea drinker lives to the left of Player 2."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the Milk drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Danish person lives to the left of the Coffee drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Dog owner lives to the left of Player 4."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Candlestick lives to the left of the Swedish person."
+    },
+    {
+      "type": "Negation",
+      "text": "The British person does not live in the Yellow house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Juice drinker lives to the left of Player 1."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife lives in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Blue house is Danish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Danish person drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker owns the Fish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Fish owner is Player 4."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The Dog owner is not Player 3."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Swedish person lives in the Green house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Blue house is Danish."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Juice drinker lives to the left of Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The Coffee drinker does not own the Bird."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife lives in the Blue house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Dog owner lives to the left of Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Fish owner is Player 4."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Candlestick lives to the left of the Swedish person."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The British person does not live in the Yellow house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Danish person lives to the left of the Coffee drinker."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Yellow house does not own the Dog."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Danish person drinks Juice."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Juice drinker owns the Fish."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Juice drinker lives to the left of Player 1."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the Milk drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Tea drinker lives to the left of Player 2."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Candlestick lives to the left of the Swedish person."
+        }
+      ]
+    }
+  ]
+}

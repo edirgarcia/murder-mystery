@@ -1,0 +1,360 @@
+{
+  "n": 6,
+  "difficulty": "hard",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Candlestick",
+      "Knife",
+      "Lead Pipe",
+      "Wrench",
+      "Rope"
+    ],
+    "nationality": [
+      "British",
+      "French",
+      "Colombian",
+      "Swedish",
+      "German",
+      "Danish"
+    ],
+    "drink": [
+      "Wine",
+      "Tea",
+      "Juice",
+      "Coffee",
+      "Milk",
+      "Water"
+    ],
+    "house_color": [
+      "Red",
+      "Ivory",
+      "Green",
+      "Blue",
+      "White",
+      "Yellow"
+    ],
+    "pet": [
+      "Bird",
+      "Cat",
+      "Dog",
+      "Fish",
+      "Snake",
+      "Horse"
+    ],
+    "name": [
+      "Player 3",
+      "Player 2",
+      "Player 4",
+      "Player 1",
+      "Player 6",
+      "Player 5"
+    ]
+  },
+  "murderer_name": "Player 3",
+  "murder_weapon": "Revolver",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Revolver owns the Bird."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Bird owner lives in the Red house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Red house is British."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The British person drinks Wine."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Wine drinker is Player 3."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Candlestick lives next to the Bird owner."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person in the Blue house lives to the left of the Snake owner."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Colombian person lives to the left of the Milk drinker."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Knife lives next to Player 2."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Swedish person lives next to the Milk drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Lead Pipe lives to the left of the Danish person."
+    },
+    {
+      "type": "Negation",
+      "text": "The French person does not drink Coffee."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Lead Pipe lives next to the Juice drinker."
+    },
+    {
+      "type": "Negation",
+      "text": "The Swedish person is not Player 5."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the Fish owner."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Colombian person lives next to the person in the Ivory house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Candlestick lives to the left of the Water drinker."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Wrench lives next to the Fish owner."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife is Player 4."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Rope does not own the Snake."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Revolver lives next to Player 2."
+    },
+    {
+      "type": "Negation",
+      "text": "The Dog owner is not Player 5."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Blue house owns the Fish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The French person owns the Cat."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The German person lives next to Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Fish owner lives next to Player 6."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 5 lives in the White house."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Colombian person lives next to the Coffee drinker."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife lives in the Green house."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Revolver owns the Bird."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Bird owner lives in the Red house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Red house is British."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The British person drinks Wine."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Wine drinker is Player 3."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The Fish owner lives next to Player 6."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Bird owner lives in the Red house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Colombian person lives next to the Coffee drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Colombian person lives to the left of the Milk drinker."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Rope does not own the Snake."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The Swedish person is not Player 5."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Lead Pipe lives to the left of the Danish person."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The German person lives next to Player 1."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 5 lives in the White house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Revolver owns the Bird."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Colombian person lives next to the person in the Ivory house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person with the Candlestick lives to the left of the Water drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to Player 2."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Wine drinker is Player 3."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Candlestick lives next to the Bird owner."
+        },
+        {
+          "type": "Negation",
+          "text": "The Dog owner is not Player 5."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The person with the Wrench lives next to the Fish owner."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the Fish owner."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife is Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The French person owns the Cat."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 5 lives in the White house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to Player 2."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 6",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Blue house owns the Fish."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Swedish person lives next to the Milk drinker."
+        },
+        {
+          "type": "Negation",
+          "text": "The French person does not drink Coffee."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Revolver lives next to Player 2."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Red house is British."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 5",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The British person drinks Wine."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Colombian person lives to the left of the Milk drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person in the Blue house lives to the left of the Snake owner."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Lead Pipe lives next to the Juice drinker."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The French person owns the Cat."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife lives in the Green house."
+        }
+      ]
+    }
+  ]
+}

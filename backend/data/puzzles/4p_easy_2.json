@@ -1,0 +1,146 @@
+{
+  "n": 4,
+  "difficulty": "easy",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Candlestick",
+      "Rope",
+      "Knife"
+    ],
+    "nationality": [
+      "Swedish",
+      "British",
+      "Danish",
+      "Colombian"
+    ],
+    "drink": [
+      "Coffee",
+      "Milk",
+      "Tea",
+      "Juice"
+    ],
+    "name": [
+      "Player 4",
+      "Player 3",
+      "Player 2",
+      "Player 1"
+    ]
+  },
+  "murderer_name": "Player 1",
+  "murder_weapon": "Knife",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person is Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Swedish person lives to the left of Player 3."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Revolver lives next to the Milk drinker."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Danish person lives next to Player 3."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 1 has the Revolver."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope drinks Tea."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 3 is Player 2."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person is Player 1."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Swedish person lives to the left of Player 3."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Rope drinks Tea."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Juice drinker is Colombian."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "PositionClue",
+          "text": "The person in house 1 has the Revolver."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 3 is Player 2."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife drinks Juice."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The Danish person lives next to Player 3."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Revolver lives next to the Milk drinker."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Colombian person is Player 1."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Rope drinks Tea."
+        }
+      ]
+    }
+  ]
+}

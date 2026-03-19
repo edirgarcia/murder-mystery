@@ -1,0 +1,188 @@
+{
+  "n": 4,
+  "difficulty": "medium",
+  "solution": {
+    "weapon": [
+      "Knife",
+      "Revolver",
+      "Rope",
+      "Candlestick"
+    ],
+    "nationality": [
+      "Danish",
+      "Colombian",
+      "Swedish",
+      "British"
+    ],
+    "drink": [
+      "Milk",
+      "Tea",
+      "Juice",
+      "Coffee"
+    ],
+    "house_color": [
+      "Blue",
+      "Yellow",
+      "Green",
+      "Red"
+    ],
+    "name": [
+      "Player 3",
+      "Player 2",
+      "Player 4",
+      "Player 1"
+    ]
+  },
+  "murderer_name": "Player 2",
+  "murder_weapon": "Revolver",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Revolver lives in the Yellow house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Yellow house drinks Tea."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Tea drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person is Player 2."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife lives in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Player 4."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick is Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Swedish person lives to the left of Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Colombian person lives next to the person in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Danish person lives in the Blue house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Knife lives to the left of the Juice drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Milk drinker lives to the left of the person in the Yellow house."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Candlestick does not live in the Green house."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Revolver lives in the Yellow house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Yellow house drinks Tea."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Tea drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person is Player 2."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife lives in the Blue house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Juice drinker is Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick is Player 1."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Revolver lives in the Yellow house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Danish person lives in the Blue house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Swedish person lives to the left of Player 1."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Colombian person is Player 2."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Juice drinker is Player 4."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Yellow house drinks Tea."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Colombian person lives next to the person in the Blue house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Knife lives to the left of the Juice drinker."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The person with the Candlestick does not live in the Green house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Milk drinker lives to the left of the person in the Yellow house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Tea drinker is Colombian."
+        }
+      ]
+    }
+  ]
+}

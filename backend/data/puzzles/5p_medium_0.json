@@ -1,0 +1,242 @@
+{
+  "n": 5,
+  "difficulty": "medium",
+  "solution": {
+    "weapon": [
+      "Rope",
+      "Revolver",
+      "Lead Pipe",
+      "Knife",
+      "Candlestick"
+    ],
+    "nationality": [
+      "Danish",
+      "British",
+      "Colombian",
+      "German",
+      "Swedish"
+    ],
+    "drink": [
+      "Wine",
+      "Juice",
+      "Milk",
+      "Tea",
+      "Coffee"
+    ],
+    "house_color": [
+      "White",
+      "Yellow",
+      "Red",
+      "Green",
+      "Blue"
+    ],
+    "name": [
+      "Player 5",
+      "Player 3",
+      "Player 2",
+      "Player 4",
+      "Player 1"
+    ]
+  },
+  "murderer_name": "Player 5",
+  "murder_weapon": "Rope",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope drinks Wine."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Wine drinker is Danish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Danish person lives in the White house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the White house is Player 5."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Milk drinker lives next to Player 3."
+    },
+    {
+      "type": "Negation",
+      "text": "The Coffee drinker is not Player 2."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Milk drinker lives next to Player 4."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Knife lives next to the person in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Revolver is Player 3."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Lead Pipe lives next to the person in the Green house."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 4 is German."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Juice drinker lives to the left of Player 1."
+    },
+    {
+      "type": "Negation",
+      "text": "The Colombian person is not Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The British person lives to the left of the Tea drinker."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 5 lives in the Blue house."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The British person lives next to the Milk drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person in the Yellow house lives to the left of Player 2."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick drinks Coffee."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope drinks Wine."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Wine drinker is Danish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Danish person lives in the White house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the White house is Player 5."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 5",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The British person lives next to the Milk drinker."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person in the Yellow house lives to the left of Player 2."
+        },
+        {
+          "type": "Negation",
+          "text": "The Colombian person is not Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The person with the Lead Pipe lives next to the person in the Green house."
+        },
+        {
+          "type": "Negation",
+          "text": "The Colombian person is not Player 1."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Juice drinker lives to the left of Player 1."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 4 is German."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Danish person lives in the White house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The Milk drinker lives next to Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Wine drinker is Danish."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick drinks Coffee."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Revolver is Player 3."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person in the White house is Player 5."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 5 lives in the Blue house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick drinks Coffee."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to the person in the Blue house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The Coffee drinker is not Player 2."
+        },
+        {
+          "type": "Ordering",
+          "text": "The British person lives to the left of the Tea drinker."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Milk drinker lives next to Player 3."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Rope drinks Wine."
+        }
+      ]
+    }
+  ]
+}

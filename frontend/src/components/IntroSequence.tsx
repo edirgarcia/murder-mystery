@@ -93,26 +93,26 @@ export default function IntroSequence({
           But one among them harbors a deadly secret.
         </p>
 
+        {/* Killer line */}
+        <p
+          className={`text-mystery-200 text-lg ${beat(5, "animate-fade-in")}`}
+        >
+          Someone here is a killer.
+        </p>
+
         {/* Weapon reveal */}
-        <div className={`${beat(5, "animate-fade-in-up")}`}>
+        <div className={`${beat(6, "animate-fade-in-up")}`}>
           <p className="text-sm uppercase tracking-widest text-mystery-400 mb-1">
             The weapon
           </p>
           <p
             className={`text-4xl font-bold text-red-400 ${
-              visibleUpTo >= 5 ? "animate-pulse-glow" : ""
+              visibleUpTo >= 6 ? "animate-pulse-glow" : ""
             }`}
           >
             {murderWeapon}
           </p>
         </div>
-
-        {/* Killer line */}
-        <p
-          className={`text-mystery-200 text-lg ${beat(6, "animate-fade-in")}`}
-        >
-          Someone here is the killer.
-        </p>
 
         {/* Call to action */}
         <p

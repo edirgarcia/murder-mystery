@@ -1,0 +1,180 @@
+{
+  "n": 4,
+  "difficulty": "medium",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Rope",
+      "Knife",
+      "Candlestick"
+    ],
+    "nationality": [
+      "British",
+      "Colombian",
+      "Danish",
+      "Swedish"
+    ],
+    "drink": [
+      "Milk",
+      "Juice",
+      "Coffee",
+      "Tea"
+    ],
+    "house_color": [
+      "Red",
+      "Green",
+      "Blue",
+      "Yellow"
+    ],
+    "name": [
+      "Player 2",
+      "Player 1",
+      "Player 3",
+      "Player 4"
+    ]
+  },
+  "murderer_name": "Player 1",
+  "murder_weapon": "Rope",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person lives in the Green house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Green house is Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Swedish person lives next to the person in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife lives in the Blue house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Coffee drinker lives to the left of the person in the Yellow house."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 2 is Player 1."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife is Player 3."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Milk drinker lives to the left of Player 4."
+    },
+    {
+      "type": "Ordering",
+      "text": "The British person lives to the left of the person in the Green house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the Coffee drinker."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope drinks Juice."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Juice drinker is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person lives in the Green house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Green house is Player 1."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Green house is Player 1."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the Coffee drinker."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife is Player 3."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The British person lives to the left of the person in the Green house."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Juice drinker is Colombian."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife lives in the Blue house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Milk drinker lives to the left of Player 4."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Colombian person lives in the Green house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Coffee drinker lives to the left of the person in the Yellow house."
+        },
+        {
+          "type": "PositionClue",
+          "text": "The person in house 2 is Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Rope drinks Juice."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife lives in the Blue house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Swedish person lives next to the person in the Blue house."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,317 @@
+{
+  "n": 5,
+  "difficulty": "harder",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Knife",
+      "Lead Pipe",
+      "Rope",
+      "Candlestick"
+    ],
+    "nationality": [
+      "Danish",
+      "Swedish",
+      "Colombian",
+      "British",
+      "German"
+    ],
+    "drink": [
+      "Milk",
+      "Tea",
+      "Coffee",
+      "Wine",
+      "Juice"
+    ],
+    "house_color": [
+      "Blue",
+      "White",
+      "Green",
+      "Yellow",
+      "Red"
+    ],
+    "pet": [
+      "Fish",
+      "Cat",
+      "Horse",
+      "Dog",
+      "Bird"
+    ],
+    "name": [
+      "Player 3",
+      "Player 4",
+      "Player 1",
+      "Player 5",
+      "Player 2"
+    ]
+  },
+  "murderer_name": "Player 4",
+  "murder_weapon": "Knife",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife drinks Tea."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Tea drinker is Swedish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Swedish person owns the Cat."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Cat owner lives in the White house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the White house is Player 4."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Rope does not own the Bird."
+    },
+    {
+      "type": "Negation",
+      "text": "The person in the Blue house does not own the Horse."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person in the White house lives to the left of the Dog owner."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick is Player 2."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Revolver does not own the Bird."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Tea drinker lives next to the Horse owner."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Wine drinker lives to the left of the person in the Red house."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Rope does not drink Juice."
+    },
+    {
+      "type": "Negation",
+      "text": "The German person does not drink Coffee."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of Player 2."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Knife lives next to Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the Tea drinker."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Milk drinker lives to the left of the Horse owner."
+    },
+    {
+      "type": "Negation",
+      "text": "The person with the Lead Pipe does not live in the Yellow house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Coffee drinker owns the Horse."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Rope lives next to Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The British person lives next to Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Danish person lives to the left of the person in the Yellow house."
+    },
+    {
+      "type": "Negation",
+      "text": "The Danish person does not own the Horse."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Fish owner lives to the left of Player 5."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife drinks Tea."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Tea drinker is Swedish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Swedish person owns the Cat."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Cat owner lives in the White house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the White house is Player 4."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The person with the Rope does not drink Juice."
+        },
+        {
+          "type": "Negation",
+          "text": "The Danish person does not own the Horse."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife drinks Tea."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Lead Pipe does not live in the Yellow house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Rope does not own the Bird."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Fish owner lives to the left of Player 5."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person in the White house is Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Coffee drinker owns the Horse."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Wine drinker lives to the left of the person in the Red house."
+        },
+        {
+          "type": "Negation",
+          "text": "The person in the Blue house does not own the Horse."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person in the White house lives to the left of the Dog owner."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick is Player 2."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the Tea drinker."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick is Player 2."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Lead Pipe does not live in the Yellow house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Rope lives next to Player 1."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Milk drinker lives to the left of the Horse owner."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Swedish person owns the Cat."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 5",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Cat owner lives in the White house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Danish person lives to the left of the person in the Yellow house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person in the White house lives to the left of the Dog owner."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Tea drinker lives next to the Horse owner."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The British person lives next to Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "Negation",
+          "text": "The German person does not drink Coffee."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to Player 1."
+        },
+        {
+          "type": "Negation",
+          "text": "The person with the Revolver does not own the Bird."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Milk drinker lives to the left of the Horse owner."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Tea drinker is Swedish."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of Player 2."
+        }
+      ]
+    }
+  ]
+}

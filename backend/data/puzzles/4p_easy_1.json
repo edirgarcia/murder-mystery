@@ -1,0 +1,154 @@
+{
+  "n": 4,
+  "difficulty": "easy",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Knife",
+      "Candlestick",
+      "Rope"
+    ],
+    "nationality": [
+      "Swedish",
+      "Danish",
+      "Colombian",
+      "British"
+    ],
+    "drink": [
+      "Tea",
+      "Coffee",
+      "Milk",
+      "Juice"
+    ],
+    "name": [
+      "Player 2",
+      "Player 3",
+      "Player 4",
+      "Player 1"
+    ]
+  },
+  "murderer_name": "Player 4",
+  "murder_weapon": "Candlestick",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person drinks Milk."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Player 4."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Candlestick lives to the left of Player 1."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Swedish person lives to the left of Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Tea drinker lives next to Player 3."
+    },
+    {
+      "type": "PositionClue",
+      "text": "The person in house 2 drinks Coffee."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of Player 4."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Danish person lives next to Player 2."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Knife drinks Coffee."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Candlestick is Colombian."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Colombian person drinks Milk."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Player 4."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "PositionClue",
+          "text": "The person in house 2 drinks Coffee."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Candlestick lives to the left of Player 1."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Tea drinker lives next to Player 3."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Knife drinks Coffee."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Milk drinker is Player 4."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The Swedish person lives to the left of Player 1."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Candlestick is Colombian."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Colombian person drinks Milk."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Danish person lives next to Player 2."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of Player 4."
+        }
+      ]
+    }
+  ]
+}

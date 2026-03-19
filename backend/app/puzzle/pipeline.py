@@ -94,6 +94,7 @@ def generate_puzzle(
     max_attempts: int = 5,
     player_names: list[str] | None = None,
     difficulty: str = "medium",
+    max_iterations: int = 100,
 ) -> Puzzle:
     """Generate a complete murder mystery puzzle for *n* players.
 
@@ -146,7 +147,7 @@ def generate_puzzle(
 
                 # Step 4: Select minimal clue set
                 clue_weights = CLUE_WEIGHTS[difficulty]
-                selected = select_clues(n, solution, candidates, murder_clues, clue_weights=clue_weights)
+                selected = select_clues(n, solution, candidates, murder_clues, max_iterations=max_iterations, clue_weights=clue_weights)
                 logger.info("Selected %d clues (including %d murder)", len(selected), len(murder_clues))
 
                 # Step 5: Distribute clues to player cards

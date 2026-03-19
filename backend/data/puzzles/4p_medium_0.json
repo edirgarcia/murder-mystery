@@ -1,0 +1,200 @@
+{
+  "n": 4,
+  "difficulty": "medium",
+  "solution": {
+    "weapon": [
+      "Revolver",
+      "Candlestick",
+      "Knife",
+      "Rope"
+    ],
+    "nationality": [
+      "Danish",
+      "Colombian",
+      "British",
+      "Swedish"
+    ],
+    "drink": [
+      "Coffee",
+      "Milk",
+      "Juice",
+      "Tea"
+    ],
+    "house_color": [
+      "Green",
+      "Yellow",
+      "Red",
+      "Blue"
+    ],
+    "name": [
+      "Player 3",
+      "Player 2",
+      "Player 4",
+      "Player 1"
+    ]
+  },
+  "murderer_name": "Player 1",
+  "murder_weapon": "Rope",
+  "clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope is Swedish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Swedish person drinks Tea."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Tea drinker lives in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Blue house is Player 1."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The Danish person lives next to the person in the Yellow house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Milk drinker is Player 2."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person in the Yellow house lives next to Player 4."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Knife lives next to the Colombian person."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Candlestick lives next to the person in the Red house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Danish person is Player 3."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person in the Green house lives to the left of Player 4."
+    },
+    {
+      "type": "Ordering",
+      "text": "The person with the Revolver lives to the left of the person in the Blue house."
+    },
+    {
+      "type": "Ordering",
+      "text": "The Coffee drinker lives to the left of Player 4."
+    },
+    {
+      "type": "Adjacency",
+      "text": "The person with the Knife lives next to Player 1."
+    }
+  ],
+  "murder_clues": [
+    {
+      "type": "DirectEquality",
+      "text": "The person with the Rope is Swedish."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Swedish person drinks Tea."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The Tea drinker lives in the Blue house."
+    },
+    {
+      "type": "DirectEquality",
+      "text": "The person in the Blue house is Player 1."
+    }
+  ],
+  "cards": [
+    {
+      "character_name": "Player 3",
+      "clues": [
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the person in the Blue house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The Coffee drinker lives to the left of Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Milk drinker is Player 2."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Swedish person drinks Tea."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 2",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The person in the Blue house is Player 1."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to Player 1."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Candlestick lives next to the person in the Red house."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person with the Revolver lives to the left of the person in the Blue house."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 4",
+      "clues": [
+        {
+          "type": "DirectEquality",
+          "text": "The Tea drinker lives in the Blue house."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person in the Yellow house lives next to Player 4."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The Danish person is Player 3."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to Player 1."
+        }
+      ]
+    },
+    {
+      "character_name": "Player 1",
+      "clues": [
+        {
+          "type": "Adjacency",
+          "text": "The person with the Knife lives next to the Colombian person."
+        },
+        {
+          "type": "DirectEquality",
+          "text": "The person with the Rope is Swedish."
+        },
+        {
+          "type": "Ordering",
+          "text": "The person in the Green house lives to the left of Player 4."
+        },
+        {
+          "type": "Adjacency",
+          "text": "The Danish person lives next to the person in the Yellow house."
+        }
+      ]
+    }
+  ]
+}

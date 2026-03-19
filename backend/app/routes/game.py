@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Header
 
-from ..config import MIN_PLAYERS
+from ..config import LIVE_GENERATE, MIN_PLAYERS
 from ..game_state import GuessRecord, store
 from ..models import (
     ClueInfo,
@@ -127,18 +127,31 @@ async def start_game(
     room.phase = GamePhase.GENERATING
     await broadcast(room, "game_starting", {"message": "Generating puzzle..."})
 
-    # Run CPU-bound puzzle generation in a thread
     n = len(room.players)
     player_names = [p.name for p in room.players]
     loop = asyncio.get_running_loop()
-    try:
+
+    if LIVE_GENERATE:
+        logger.info("LIVE_GENERATE enabled, generating puzzle live")
+        try:
+            puzzle = await loop.run_in_executor(
+                None, lambda: generate_puzzle(n, player_names=player_names, difficulty=difficulty)
+            )
+        except RuntimeError as e:
+            room.phase = GamePhase.LOBBY
+            await broadcast(room, "generation_failed", {"error": str(e)})
+            raise HTTPException(status_code=500, detail=f"Puzzle generation failed: {e}")
+    else:
         puzzle = await loop.run_in_executor(
-            None, lambda: generate_puzzle(n, player_names=player_names, difficulty=difficulty)
+            None, lambda: load_puzzle(n, player_names, difficulty=difficulty)
         )
-    except RuntimeError as e:
-        room.phase = GamePhase.LOBBY
-        await broadcast(room, "generation_failed", {"error": str(e)})
-        raise HTTPException(status_code=500, detail=f"Puzzle generation failed: {e}")
+        if not puzzle:
+            room.phase = GamePhase.LOBBY
+            await broadcast(room, "generation_failed", {"error": "No pre-generated puzzle available"})
+            raise HTTPException(
+                status_code=500,
+                detail=f"No pre-generated puzzle for n={n} difficulty={difficulty}",
+            )
 
     room.solution = puzzle.solution
     room.murderer_name = puzzle.murderer_name
@@ -281,3 +294,4 @@ async def get_results(code: str) -> ResultsResponse:
 
 # Keep import at bottom to avoid circular import issues
 from ..puzzle.pipeline import generate_puzzle  # noqa: E402
+from ..puzzle.relabel import load_puzzle  # noqa: E402
