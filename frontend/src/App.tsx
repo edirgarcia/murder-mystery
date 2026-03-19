@@ -10,7 +10,7 @@ import DashboardPage from "./pages/DashboardPage";
 export default function App() {
   return (
     <GameProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/murder-mystery">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/lobby/:code" element={<LobbyPage />} />

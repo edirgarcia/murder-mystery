@@ -16,7 +16,7 @@ export function useWebSocket(
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
-    const url = `${protocol}//${host}/api/games/${code}/ws?player_id=${playerId}`;
+    const url = `${protocol}//${host}${import.meta.env.BASE_URL}api/games/${code}/ws?player_id=${playerId}`;
 
     const ws = new WebSocket(url);
     wsRef.current = ws;

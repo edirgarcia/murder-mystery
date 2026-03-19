@@ -6,7 +6,7 @@ import type {
   ResultsResponse,
 } from "../types/game";
 
-const BASE = "/api/games";
+const BASE = `${import.meta.env.BASE_URL}api/games`;
 
 async function request<T>(
   url: string,
