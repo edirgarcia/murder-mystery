@@ -1,0 +1,272 @@
+"""Funny questions game routes: start, vote, scores."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from datetime import datetime, timezone, timedelta
+
+from fastapi import APIRouter, HTTPException, Header
+
+from ..config import MIN_PLAYERS, VOTE_SECONDS, REVEAL_SECONDS
+from ..game_state import store
+from ..models import (
+    PlayerScoreEntry,
+    RoundResultResponse,
+    StartFQRequest,
+    VoteRequest,
+)
+from ..questions import draw_questions
+from ..scoring import score_round
+from ...shared.models import GamePhase
+from ...shared.routes.ws import broadcast
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/fq/games", tags=["fq-game"])
+
+
+@router.post("/{code}/start")
+async def start_game(
+    code: str,
+    req: StartFQRequest | None = None,
+    x_player_id: str = Header(...),
+) -> dict:
+    if req is None:
+        req = StartFQRequest()
+
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can start the game")
+    if room.phase != GamePhase.LOBBY:
+        raise HTTPException(status_code=400, detail="Game already started")
+    if len(room.players) < MIN_PLAYERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Need at least {MIN_PLAYERS} players",
+        )
+
+    # Draw enough questions for a full game (generous upper bound)
+    room.questions = draw_questions(
+        count=50,
+        categories=req.categories,
+        max_spice=req.max_spice,
+    )
+    if not room.questions:
+        raise HTTPException(status_code=400, detail="No questions match the selected filters")
+
+    room.points_to_win = req.points_to_win
+    room.scores = {p.id: 0 for p in room.players}
+    room.phase = GamePhase.PLAYING
+
+    # Start game loop before broadcast so it always runs
+    room.game_task = asyncio.create_task(_run_game(room))
+    print(f"[FQ] Game task created for room {code}, players={len(room.players)}")
+
+    await broadcast(room, "game_started", {
+        "message": "Game is starting!",
+        "points_to_win": room.points_to_win,
+    })
+
+    return {"status": "started"}
+
+
+@router.post("/{code}/vote")
+async def submit_vote(
+    code: str,
+    req: VoteRequest,
+    x_player_id: str = Header(...),
+) -> dict:
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if room.phase != GamePhase.PLAYING:
+        raise HTTPException(status_code=400, detail="Game not in progress")
+    if room.round_phase != "voting":
+        raise HTTPException(status_code=400, detail="Not in voting phase")
+    if store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Host cannot vote")
+
+    player = store.get_player(room, x_player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    if player.id in room.current_votes:
+        raise HTTPException(status_code=400, detail="Already voted")
+
+    # Validate target is a player in this room
+    valid_targets = {p.id for p in room.players}
+    if req.voted_for not in valid_targets:
+        raise HTTPException(status_code=400, detail="Invalid vote target")
+
+    room.current_votes[player.id] = req.voted_for
+    print(f"[FQ] Vote from {player.id}: {len(room.current_votes)}/{len(room.players)} votes, vote_complete={room.vote_complete is not None}")
+
+    await broadcast(room, "vote_cast", {
+        "votes_in": len(room.current_votes),
+        "total_players": len(room.players),
+    })
+
+    # If all players have voted, signal early completion
+    if len(room.current_votes) >= len(room.players) and room.vote_complete:
+        print(f"[FQ] All voted! Signaling early completion")
+        room.vote_complete.set()
+
+    return {"status": "voted"}
+
+
+@router.get("/{code}/scores")
+async def get_scores(code: str) -> list[PlayerScoreEntry]:
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    entries = []
+    for p in room.players:
+        entries.append(PlayerScoreEntry(
+            player_id=p.id,
+            player_name=p.name,
+            score=room.scores.get(p.id, 0),
+            has_shame=room.shame_holder == p.id,
+        ))
+    entries.sort(key=lambda e: e.score, reverse=True)
+    return entries
+
+
+async def _run_game(room) -> None:
+    """Main game loop: question → vote → score → reveal → repeat."""
+    print(f"[FQ] _run_game STARTED for room {room.code}")
+    try:
+        while room.phase == GamePhase.PLAYING:
+            # Check if we've run out of questions
+            if room.question_index >= len(room.questions):
+                print(f"[FQ] Room {room.code}: out of questions")
+                break
+
+            question = room.questions[room.question_index]
+            room.current_round += 1
+            room.current_votes = {}
+            room.round_phase = "voting"
+            room.vote_complete = asyncio.Event()
+
+            # Calculate voting deadline
+            voting_ends_at = datetime.now(timezone.utc) + timedelta(seconds=VOTE_SECONDS)
+            room.voting_ends_at = voting_ends_at.isoformat()
+
+            print(f"[FQ] Room {room.code}: round {room.current_round} VOTING ({VOTE_SECONDS}s), connections={len(room.connections)}")
+
+            # Broadcast new question
+            await broadcast(room, "new_question", {
+                "round": room.current_round,
+                "question": question.text,
+                "voting_ends_at": room.voting_ends_at,
+                "players": [{"id": p.id, "name": p.name} for p in room.players],
+            })
+
+            # Wait for timer or all votes
+            try:
+                remaining = (voting_ends_at - datetime.now(timezone.utc)).total_seconds()
+                print(f"[FQ] Room {room.code}: waiting for votes (remaining={remaining:.1f}s)")
+                if remaining > 0:
+                    await asyncio.wait_for(room.vote_complete.wait(), timeout=remaining)
+                print(f"[FQ] Room {room.code}: round {room.current_round} ALL VOTED")
+            except asyncio.TimeoutError:
+                print(f"[FQ] Room {room.code}: round {room.current_round} TIMED OUT ({len(room.current_votes)}/{len(room.players)} votes)")
+
+            print(f"[FQ] Room {room.code}: round {room.current_round} → REVEAL")
+            room.round_phase = "reveal"
+            room.voting_ends_at = None
+
+            # Score the round
+            player_ids = [p.id for p in room.players]
+            result = score_round(room.current_votes, player_ids, room.shame_holder)
+
+            # Apply points
+            for pid, delta in result.points.items():
+                room.scores[pid] = room.scores.get(pid, 0) + delta
+
+            # Update shame
+            prev_shame_holder = room.shame_holder
+            if result.shame_cleared:
+                room.shame_holder = None
+            if result.new_shame:
+                room.shame_holder = result.new_shame
+
+            # Build name-based breakdown for display
+            id_to_name = {p.id: p.name for p in room.players}
+            name_vote_breakdown = {}
+            for target_id, voter_ids in result.vote_breakdown.items():
+                target_name = id_to_name.get(target_id, target_id)
+                name_vote_breakdown[target_name] = [id_to_name.get(v, v) for v in voter_ids]
+
+            name_deltas = {id_to_name.get(pid, pid): delta for pid, delta in result.points.items()}
+            name_scores = {id_to_name.get(pid, pid): score for pid, score in room.scores.items()}
+
+            most_voted_name = id_to_name.get(result.most_voted, None) if result.most_voted else None
+            shame_name = id_to_name.get(room.shame_holder, None) if room.shame_holder else None
+            prev_shame_name = id_to_name.get(prev_shame_holder, None) if prev_shame_holder else None
+
+            # Check for winner
+            winner_name = None
+            for pid, score in room.scores.items():
+                if score >= room.points_to_win:
+                    room.winner = pid
+                    winner_name = id_to_name.get(pid, pid)
+                    break
+
+            # Broadcast round result
+            print(f"[FQ] Room {room.code}: broadcasting round_result, connections={len(room.connections)}")
+            await broadcast(room, "round_result", {
+                "question": question.text,
+                "most_voted": result.most_voted,
+                "most_voted_name": most_voted_name,
+                "vote_breakdown": name_vote_breakdown,
+                "point_deltas": name_deltas,
+                "scores": name_scores,
+                "shame_holder_name": shame_name,
+                "shame_cleared_name": prev_shame_name if result.shame_cleared else None,
+                "winner_name": winner_name,
+            })
+
+            # If winner, end game
+            if room.winner:
+                await asyncio.sleep(REVEAL_SECONDS)
+                room.phase = GamePhase.FINISHED
+                room.round_phase = None
+                await broadcast(room, "game_over", {
+                    "winner": room.winner,
+                    "winner_name": winner_name,
+                    "scores": name_scores,
+                })
+                return
+
+            # Reveal pause
+            await asyncio.sleep(REVEAL_SECONDS)
+
+            room.question_index += 1
+
+        # Ran out of questions — end game, highest score wins
+        if room.phase == GamePhase.PLAYING:
+            room.phase = GamePhase.FINISHED
+            room.round_phase = None
+            id_to_name = {p.id: p.name for p in room.players}
+            best_pid = max(room.scores, key=lambda pid: room.scores[pid]) if room.scores else None
+            room.winner = best_pid
+            name_scores = {id_to_name.get(pid, pid): score for pid, score in room.scores.items()}
+            winner_name = id_to_name.get(best_pid, None) if best_pid else None
+            await broadcast(room, "game_over", {
+                "winner": best_pid,
+                "winner_name": winner_name,
+                "scores": name_scores,
+            })
+
+    except asyncio.CancelledError:
+        print(f"[FQ] Room {room.code}: game loop CANCELLED")
+    except Exception as e:
+        print(f"[FQ] Room {room.code}: game loop CRASHED: {e}")
+        import traceback
+        traceback.print_exc()
+        room.phase = GamePhase.FINISHED
+        room.round_phase = None

@@ -3,10 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Murder Mystery</title>
+    <title>Party Games</title>
+    <style>
+      body { background: #1a0a2e; color: white; font-family: Georgia, serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+      .container { text-align: center; }
+      h1 { font-size: 2.5rem; color: #bba4dc; margin-bottom: 2rem; }
+      a { display: block; margin: 1rem auto; padding: 1rem 2rem; max-width: 300px; border-radius: 12px; background: #462d6e; color: white; text-decoration: none; font-size: 1.2rem; transition: background 0.2s; }
+      a:hover { background: #5e3f8e; }
+    </style>
   </head>
-  <body class="bg-mystery-900 text-white min-h-screen">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body>
+    <div class="container">
+      <h1>Party Games</h1>
+      <a href="/murder-mystery/">Murder Mystery</a>
+      <a href="/funny-questions/">Funny Questions</a>
+    </div>
   </body>
 </html>

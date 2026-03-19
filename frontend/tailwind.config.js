@@ -1,19 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: ["./*.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
         mystery: {
-          900: "#1a0a2e",
-          800: "#2d1b4e",
-          700: "#462d6e",
-          600: "#5e3f8e",
-          500: "#7b52ae",
-          400: "#9b7bc5",
-          300: "#bba4dc",
-          200: "#dcccf0",
-          100: "#f0e8fa",
+          900: "rgb(var(--c-900) / <alpha-value>)",
+          800: "rgb(var(--c-800) / <alpha-value>)",
+          700: "rgb(var(--c-700) / <alpha-value>)",
+          600: "rgb(var(--c-600) / <alpha-value>)",
+          500: "rgb(var(--c-500) / <alpha-value>)",
+          400: "rgb(var(--c-400) / <alpha-value>)",
+          300: "rgb(var(--c-300) / <alpha-value>)",
+          200: "rgb(var(--c-200) / <alpha-value>)",
+          100: "rgb(var(--c-100) / <alpha-value>)",
         },
       },
       keyframes: {
