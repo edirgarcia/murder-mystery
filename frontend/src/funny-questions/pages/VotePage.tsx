@@ -42,7 +42,7 @@ export default function VotePage() {
         newQuestion(
           info.current_question,
           info.current_round,
-          info.voting_ends_at,
+          info.voting_ends_at ?? new Date().toISOString(),
           info.players,
         );
       }
