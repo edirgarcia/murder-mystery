@@ -49,6 +49,10 @@ class NightActionRequest(BaseModel):
     target2: str | None = None  # for cupid_link (two targets)
 
 
+class WolfPreselectRequest(BaseModel):
+    target: str
+
+
 class DayVoteRequest(BaseModel):
     target: str  # player_id or "skip"
 

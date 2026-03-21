@@ -19,7 +19,7 @@ class Difficulty(str, Enum):
 
 class StartGameRequest(BaseModel):
     difficulty: Difficulty = Difficulty.MEDIUM
-    timer_minutes: int = Field(default=10, ge=5, le=30)
+    round_minutes: int = Field(default=5, ge=1, le=15)
 
 
 class GuessRequest(BaseModel):
@@ -36,7 +36,9 @@ class GameInfo(BaseModel):
     murder_weapon: str | None = None
     difficulty: str | None = None
     host_name: str = ""
-    timer_duration_seconds: int | None = None
+    current_round: int = 0
+    round_durations: list[int] = []
+    round_started_at: str | None = None
     started_at: str | None = None
     guesses_count: int = 0
 
@@ -44,6 +46,7 @@ class GameInfo(BaseModel):
 class ClueInfo(BaseModel):
     type: str
     text: str
+    round: int = 1
 
 
 class PlayerCardResponse(BaseModel):

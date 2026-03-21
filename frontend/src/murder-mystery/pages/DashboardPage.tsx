@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useGame, useGameActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
-import { getGameInfo, startGame, beginGame, endGame, getResults, buildWsUrl } from "../api/http";
+import { getGameInfo, startGame, beginGame, advanceRound, endGame, getResults, buildWsUrl } from "../api/http";
 import type { Difficulty, LeaderboardEntry, ClueInfo } from "../types/game";
 import type { WSEvent } from "@shared/types/game";
 import PlayerList from "@shared/components/PlayerList";
@@ -40,17 +40,18 @@ export default function DashboardPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setGame, setPlayers, addPlayer, setPhase, setError, setTimerInfo, setMurderWeapon } = useGameActions();
+  const { setGame, setPlayers, addPlayer, setPhase, setError, setRoundInfo, setRoundDurations, setMurderWeapon } = useGameActions();
   const [starting, setStarting] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [timerMinutes, setTimerMinutes] = useState(10);
+  const [roundMinutes, setRoundMinutes] = useState(5);
   const [guessesCount, setGuessesCount] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [murderClues, setMurderClues] = useState<ClueInfo[] | null>(null);
   const [murdererName, setMurdererName] = useState<string | null>(null);
   const [murderWeaponLocal, setMurderWeaponLocal] = useState<string | null>(null);
-  const [startedAt, setStartedAt] = useState<string | null>(null);
-  const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [roundStartedAt, setRoundStartedAt] = useState<string | null>(null);
+  const [roundDurationSeconds, setRoundDurationSeconds] = useState<number | null>(null);
   const [showIntro, setShowIntro] = useState(false);
   const [introPlayerNames, setIntroPlayerNames] = useState<string[]>([]);
   const loadedRef = useRef(false);
@@ -75,10 +76,14 @@ export default function DashboardPage() {
       setMurderWeapon(info.murder_weapon);
       setMurderWeaponLocal(info.murder_weapon);
       setGuessesCount(info.guesses_count);
-      if (info.started_at && info.timer_duration_seconds) {
-        setStartedAt(info.started_at);
-        setDurationSeconds(info.timer_duration_seconds);
-        setTimerInfo(info.started_at, info.timer_duration_seconds);
+      if (info.round_durations.length > 0) {
+        setRoundDurations(info.round_durations);
+      }
+      if (info.current_round > 0 && info.round_started_at) {
+        setCurrentRound(info.current_round);
+        setRoundStartedAt(info.round_started_at);
+        setRoundDurationSeconds(info.round_durations[info.current_round - 1]);
+        setRoundInfo(info.current_round, info.round_started_at, info.round_durations[info.current_round - 1]);
       }
       if (info.phase === "finished") {
         getResults(code).then((results) => {
@@ -114,15 +119,25 @@ export default function DashboardPage() {
           }
           setShowIntro(true);
           break;
-        case "timer_started":
-          if (event.data.started_at && event.data.duration_seconds) {
-            setStartedAt(event.data.started_at as string);
-            setDurationSeconds(event.data.duration_seconds as number);
-            setTimerInfo(
-              event.data.started_at as string,
-              event.data.duration_seconds as number,
-            );
-          }
+        case "round_started":
+          setCurrentRound(event.data.round as number);
+          setRoundStartedAt(event.data.started_at as string);
+          setRoundDurationSeconds(event.data.duration_seconds as number);
+          setRoundInfo(
+            event.data.round as number,
+            event.data.started_at as string,
+            event.data.duration_seconds as number,
+          );
+          break;
+        case "round_advanced":
+          setCurrentRound(event.data.round as number);
+          setRoundStartedAt(event.data.started_at as string);
+          setRoundDurationSeconds(event.data.duration_seconds as number);
+          setRoundInfo(
+            event.data.round as number,
+            event.data.started_at as string,
+            event.data.duration_seconds as number,
+          );
           break;
         case "generation_failed":
           setPhase("lobby");
@@ -148,7 +163,7 @@ export default function DashboardPage() {
         }
       }
     },
-    [code, addPlayer, setPhase, setError, setTimerInfo, setMurderWeapon]
+    [code, addPlayer, setPhase, setError, setRoundInfo, setMurderWeapon, setRoundDurations]
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
@@ -158,10 +173,19 @@ export default function DashboardPage() {
     if (!code || !state.playerId) return;
     setStarting(true);
     try {
-      await startGame(code, state.playerId, difficulty, timerMinutes);
+      await startGame(code, state.playerId, difficulty, roundMinutes);
     } catch (e: any) {
       setError(e.message);
       setStarting(false);
+    }
+  }
+
+  async function handleAdvanceRound() {
+    if (!code || !state.playerId) return;
+    try {
+      await advanceRound(code, state.playerId);
+    } catch (e: any) {
+      setError(e.message);
     }
   }
 
@@ -252,16 +276,16 @@ export default function DashboardPage() {
 
           <div className="bg-mystery-800 rounded-2xl p-4 shadow-xl">
             <h3 className="text-mystery-300 font-semibold mb-3 text-sm">
-              Timer (minutes)
+              Round Duration (minutes per round)
             </h3>
             <div className="flex gap-2">
-              {[5, 10, 15, 20].map((m) => (
+              {[3, 5, 7].map((m) => (
                 <button
                   key={m}
-                  onClick={() => setTimerMinutes(m)}
+                  onClick={() => setRoundMinutes(m)}
                   disabled={starting}
                   className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-                    timerMinutes === m
+                    roundMinutes === m
                       ? "bg-mystery-500 text-white"
                       : "bg-mystery-700 text-mystery-400 hover:bg-mystery-600"
                   } disabled:opacity-40`}
@@ -308,8 +332,21 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {startedAt && durationSeconds && (
-            <CountdownTimer startedAt={startedAt} durationSeconds={durationSeconds} />
+          <div className="text-center">
+            <p className="text-mystery-400 text-sm uppercase tracking-wider">Round</p>
+            <p className="text-5xl font-bold text-mystery-200 mt-1">
+              {currentRound} <span className="text-mystery-400 text-2xl">/ 3</span>
+            </p>
+          </div>
+
+          {roundStartedAt && roundDurationSeconds && (
+            <CountdownTimer startedAt={roundStartedAt} durationSeconds={roundDurationSeconds} />
+          )}
+
+          {currentRound < 2 && (
+            <p className="text-center text-mystery-400 text-sm">
+              Accusations locked until Round 2
+            </p>
           )}
 
           <div className="bg-mystery-800 rounded-2xl p-6 shadow-xl text-center">
@@ -329,12 +366,20 @@ export default function DashboardPage() {
             <PlayerList players={state.players} />
           </div>
 
-          <button
-            onClick={handleEndGame}
-            className="w-full py-3 rounded-xl bg-red-700 hover:bg-red-600 text-white font-semibold text-lg transition"
-          >
-            End Game Early
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleAdvanceRound}
+              className="flex-1 py-3 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
+            >
+              {currentRound < 3 ? "Next Round" : "End Game"}
+            </button>
+            <button
+              onClick={handleEndGame}
+              className="py-3 px-6 rounded-xl bg-red-700 hover:bg-red-600 text-white font-semibold transition"
+            >
+              End
+            </button>
+          </div>
 
           {state.error && (
             <p className="text-red-400 text-sm text-center">{state.error}</p>

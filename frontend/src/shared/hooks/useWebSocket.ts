@@ -10,6 +10,8 @@ export function useWebSocket(
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const intentionalClose = useRef(false);
+  const onEventRef = useRef(onEvent);
+  onEventRef.current = onEvent;
 
   const connect = useCallback(() => {
     if (!wsUrl) return;
@@ -32,7 +34,7 @@ export function useWebSocket(
       try {
         const event: WSEvent = JSON.parse(e.data);
         if (event.event !== "pong") {
-          onEvent(event);
+          onEventRef.current(event);
         }
       } catch {
         // ignore malformed messages
@@ -49,7 +51,7 @@ export function useWebSocket(
     ws.onerror = () => {
       ws.close();
     };
-  }, [wsUrl, onEvent]);
+  }, [wsUrl]);
 
   useEffect(() => {
     connect();

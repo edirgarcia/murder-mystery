@@ -35,6 +35,18 @@ export async function submitNightAction(
   });
 }
 
+export async function sendWolfPreselection(
+  code: string,
+  playerId: string,
+  target: string
+): Promise<void> {
+  await request(`${BASE}/${code}/wolf-preselect`, {
+    method: "POST",
+    headers: { "X-Player-Id": playerId },
+    body: JSON.stringify({ target }),
+  });
+}
+
 export async function submitVote(
   code: string,
   playerId: string,

@@ -33,10 +33,17 @@ export default function GuessPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setHasGuessed, setPhase } = useGameActions();
+  const { setHasGuessed, setPhase, setRoundInfo } = useGameActions();
   const [selected, setSelected] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect back if somehow reached during round 1
+  useEffect(() => {
+    if (state.currentRound < 2 && state.currentRound > 0 && !state.hasGuessed) {
+      navigate(`/game/${code}`, { replace: true });
+    }
+  }, [state.currentRound, state.hasGuessed, code, navigate]);
 
   const handleWSEvent = useCallback(
     (event: WSEvent) => {
@@ -44,8 +51,15 @@ export default function GuessPage() {
         setPhase("finished");
         navigate(`/result/${code}`);
       }
+      if (event.event === "round_advanced") {
+        setRoundInfo(
+          event.data.round as number,
+          event.data.started_at as string,
+          event.data.duration_seconds as number,
+        );
+      }
     },
-    [code, navigate, setPhase]
+    [code, navigate, setPhase, setRoundInfo]
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
@@ -78,10 +92,10 @@ export default function GuessPage() {
             <p className="text-mystery-400 mb-6">
               Waiting for all players to finish or the timer to expire...
             </p>
-            {state.startedAt && state.timerDurationSeconds && (
+            {state.roundStartedAt && state.roundDurations.length > 0 && state.currentRound > 0 && (
               <WaitingTimer
-                startedAt={state.startedAt}
-                durationSeconds={state.timerDurationSeconds}
+                startedAt={state.roundStartedAt}
+                durationSeconds={state.roundDurations[state.currentRound - 1]}
               />
             )}
           </div>

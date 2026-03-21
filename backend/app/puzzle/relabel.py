@@ -11,7 +11,7 @@ import json
 import random
 from pathlib import Path
 
-from .distributor import PlayerCard
+from .distributor import PlayerCard, assign_rounds
 from .pipeline import Puzzle
 from .schema import CATEGORIES
 
@@ -168,6 +168,8 @@ def _dict_to_puzzle(d: dict) -> Puzzle:
         for card in d["cards"]
     ]
 
+    round_assignments = assign_rounds(cards, murder_clues)
+
     return Puzzle(
         n=d["n"],
         solution=d["solution"],
@@ -177,4 +179,5 @@ def _dict_to_puzzle(d: dict) -> Puzzle:
         murder_weapon=d["murder_weapon"],
         cards=cards,
         difficulty=d["difficulty"],
+        clue_round_assignments=round_assignments,
     )

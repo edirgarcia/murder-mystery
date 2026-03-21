@@ -26,7 +26,9 @@ def build_game_info(room: MurderRoom) -> dict:
         "murder_weapon": room.murder_weapon,
         "difficulty": room.difficulty,
         "host_name": room.host_name,
-        "timer_duration_seconds": room.duration_seconds if room.started_at else None,
+        "current_round": room.current_round,
+        "round_durations": room.round_durations,
+        "round_started_at": room.round_started_at.isoformat() if room.round_started_at else None,
         "started_at": room.started_at.isoformat() if room.started_at else None,
         "guesses_count": len(room.guesses),
     }

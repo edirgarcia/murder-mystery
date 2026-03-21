@@ -12,7 +12,9 @@ export interface GameInfo {
   murder_weapon: string | null;
   difficulty: Difficulty | null;
   host_name: string;
-  timer_duration_seconds: number | null;
+  current_round: number;
+  round_durations: number[];
+  round_started_at: string | null;
   started_at: string | null;
   guesses_count: number;
 }
@@ -20,6 +22,7 @@ export interface GameInfo {
 export interface ClueInfo {
   type: string;
   text: string;
+  round: number;
 }
 
 export interface PlayerCard {

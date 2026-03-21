@@ -124,3 +124,45 @@ def distribute_clues(
         rng.shuffle(card.clues)
 
     return cards
+
+
+def assign_rounds(
+    cards: list[PlayerCard],
+    murder_clues: list[Clue],
+    num_rounds: int = 3,
+    rng: random.Random | None = None,
+) -> list[list[int]]:
+    """Assign each clue on each card to a round (1..num_rounds).
+
+    Murder chain clues are spread across different rounds so no single
+    round reveals the entire chain.  Non-murder clues are distributed
+    as evenly as possible across rounds.
+
+    Returns a parallel structure: ``assignments[card_idx][clue_idx]``
+    is the round number (1-based) for that clue.
+    """
+    rng = rng or random.Random()
+    murder_texts = {c.render() for c in murder_clues}
+
+    assignments: list[list[int]] = []
+
+    for card in cards:
+        n_clues = len(card.clues)
+        rounds: list[int] = [0] * n_clues
+
+        # Identify murder vs non-murder clue indices
+        murder_idxs = [i for i, c in enumerate(card.clues) if c.render() in murder_texts]
+        other_idxs = [i for i, c in enumerate(card.clues) if c.render() not in murder_texts]
+
+        # Spread murder clues across rounds (cycling 1, 2, 3, 1, ...)
+        for seq, idx in enumerate(murder_idxs):
+            rounds[idx] = (seq % num_rounds) + 1
+
+        # Distribute non-murder clues evenly across rounds
+        rng.shuffle(other_idxs)
+        for seq, idx in enumerate(other_idxs):
+            rounds[idx] = (seq % num_rounds) + 1
+
+        assignments.append(rounds)
+
+    return assignments

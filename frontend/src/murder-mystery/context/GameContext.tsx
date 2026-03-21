@@ -22,7 +22,9 @@ interface GameState {
   hasGuessed: boolean;
   guessedAt: string | null;
   leaderboard: LeaderboardEntry[] | null;
-  timerDurationSeconds: number | null;
+  currentRound: number;
+  roundDurations: number[];
+  roundStartedAt: string | null;
   startedAt: string | null;
   error: string | null;
 }
@@ -38,7 +40,8 @@ type GameAction =
   | { type: "SET_CARD"; card: PlayerCard }
   | { type: "SET_HAS_GUESSED"; guessedAt: string }
   | { type: "SET_LEADERBOARD"; leaderboard: LeaderboardEntry[] }
-  | { type: "SET_TIMER_INFO"; startedAt: string; durationSeconds: number }
+  | { type: "SET_ROUND_INFO"; round: number; startedAt: string; durationSeconds: number }
+  | { type: "SET_ROUND_DURATIONS"; roundDurations: number[] }
   | { type: "SET_ERROR"; error: string }
   | { type: "CLEAR_ERROR" }
   | { type: "RESET" };
@@ -56,7 +59,9 @@ const initialState: GameState = {
   hasGuessed: false,
   guessedAt: null,
   leaderboard: null,
-  timerDurationSeconds: null,
+  currentRound: 0,
+  roundDurations: [],
+  roundStartedAt: null,
   startedAt: null,
   error: null,
 };
@@ -94,8 +99,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, hasGuessed: true, guessedAt: action.guessedAt };
     case "SET_LEADERBOARD":
       return { ...state, leaderboard: action.leaderboard };
-    case "SET_TIMER_INFO":
-      return { ...state, startedAt: action.startedAt, timerDurationSeconds: action.durationSeconds };
+    case "SET_ROUND_INFO": {
+      const newState: Partial<GameState> = {
+        currentRound: action.round,
+        roundStartedAt: action.startedAt,
+      };
+      // Set startedAt on first round (overall game start for scoring)
+      if (action.round === 1 && !state.startedAt) {
+        newState.startedAt = action.startedAt;
+      }
+      return { ...state, ...newState };
+    }
+    case "SET_ROUND_DURATIONS":
+      return { ...state, roundDurations: action.roundDurations };
     case "SET_ERROR":
       return { ...state, error: action.error };
     case "CLEAR_ERROR":
@@ -177,9 +193,15 @@ export function useGameActions() {
     [dispatch]
   );
 
-  const setTimerInfo = useCallback(
-    (startedAt: string, durationSeconds: number) =>
-      dispatch({ type: "SET_TIMER_INFO", startedAt, durationSeconds }),
+  const setRoundInfo = useCallback(
+    (round: number, startedAt: string, durationSeconds: number) =>
+      dispatch({ type: "SET_ROUND_INFO", round, startedAt, durationSeconds }),
+    [dispatch]
+  );
+
+  const setRoundDurations = useCallback(
+    (roundDurations: number[]) =>
+      dispatch({ type: "SET_ROUND_DURATIONS", roundDurations }),
     [dispatch]
   );
 
@@ -200,7 +222,8 @@ export function useGameActions() {
     setCard,
     setHasGuessed,
     setLeaderboard,
-    setTimerInfo,
+    setRoundInfo,
+    setRoundDurations,
     setError,
     reset,
   };

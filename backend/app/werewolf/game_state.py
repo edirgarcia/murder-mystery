@@ -27,7 +27,9 @@ class WerewolfRoom(BaseGameRoom):
     night_number: int = 0
     night_sub_phase: NightSubPhase | None = None
     werewolf_votes: dict[str, str] = field(default_factory=dict)
+    werewolf_preselections: dict[str, str] = field(default_factory=dict)
     werewolf_victim: str | None = None
+    alpha_wolf_id: str | None = None
     seer_target: str | None = None
     witch_heal_used: bool = False
     witch_kill_used: bool = False

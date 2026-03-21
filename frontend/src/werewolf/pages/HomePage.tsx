@@ -65,13 +65,21 @@ export default function HomePage() {
 
         <div className="bg-mystery-800 border border-mystery-700 rounded-2xl p-5 space-y-3 shadow-xl">
           {!joinCode && (
-            <button
-              onClick={handleCreate}
-              disabled={loading}
-              className="w-full rounded-xl py-3 bg-red-600 hover:bg-red-500 transition text-white font-semibold disabled:opacity-50"
-            >
-              {loading ? "Creating..." : "Create Game"}
-            </button>
+            <>
+              <button
+                onClick={handleCreate}
+                disabled={loading}
+                className="w-full rounded-xl py-3 bg-red-600 hover:bg-red-500 transition text-white font-semibold disabled:opacity-50"
+              >
+                {loading ? "Creating..." : "Create Game"}
+              </button>
+
+              <div className="flex items-center gap-3">
+                <hr className="flex-1 border-mystery-600" />
+                <span className="text-mystery-400 text-sm">or join</span>
+                <hr className="flex-1 border-mystery-600" />
+              </div>
+            </>
           )}
 
           <input

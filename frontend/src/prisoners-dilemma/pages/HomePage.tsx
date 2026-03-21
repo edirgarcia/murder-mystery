@@ -77,13 +77,21 @@ export default function HomePage() {
           <section className="rounded-[28px] border border-white/10 bg-mystery-800/80 p-6 shadow-2xl backdrop-blur">
             <div className="space-y-4">
               {!joinCode && (
-                <button
-                  onClick={handleCreate}
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-mystery-500 px-5 py-4 text-lg font-semibold text-white transition hover:bg-mystery-400 disabled:opacity-50"
-                >
-                  {loading ? "..." : "Create Lobby"}
-                </button>
+                <>
+                  <button
+                    onClick={handleCreate}
+                    disabled={loading}
+                    className="w-full rounded-2xl bg-mystery-500 px-5 py-4 text-lg font-semibold text-white transition hover:bg-mystery-400 disabled:opacity-50"
+                  >
+                    {loading ? "..." : "Create Lobby"}
+                  </button>
+
+                  <div className="flex items-center gap-3">
+                    <hr className="flex-1 border-white/10" />
+                    <span className="text-mystery-400 text-sm">or join</span>
+                    <hr className="flex-1 border-white/10" />
+                  </div>
+                </>
               )}
 
               <input

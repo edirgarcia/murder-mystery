@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { WSEvent } from "@shared/types/game";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
-import { buildWsUrl, getPlayerState, submitNightAction, submitVote } from "../api/http";
+import { buildWsUrl, getPlayerState, sendWolfPreselection, submitNightAction, submitVote } from "../api/http";
 import { useWW, useWWActions } from "../context/GameContext";
 import CountdownBar from "../components/CountdownBar";
 import DayVote from "../components/DayVote";
 import NightAction from "../components/NightAction";
+import WitchAction from "../components/WitchAction";
 import RoleCard from "../components/RoleCard";
 import PlayerGrid from "../components/PlayerGrid";
-import type { Role, WWPrivateState } from "../types/game";
+import type { Role, WolfPackMember, WWPrivateState } from "../types/game";
 
 function canActInNight(role: Role | null, nightSubPhase: string | null, alive: boolean): boolean {
   if (!alive) return false;
@@ -35,6 +36,10 @@ export default function PlayerPage() {
     setWinner,
     setLastDeaths,
     setSeerResult,
+    setWitchPrompt,
+    clearWitchPrompt,
+    setWolfPack,
+    setWolfPreselection,
     setActionSubmitted,
     setHasVoted,
     setError,
@@ -43,6 +48,27 @@ export default function PlayerPage() {
   const [selected, setSelected] = useState("");
   const [selected2, setSelected2] = useState("");
   const [loading, setLoading] = useState(false);
+  const [introText, setIntroText] = useState<string | null>(null);
+  const preselectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleWolfPreselect = useCallback(
+    (targetId: string) => {
+      setSelected(targetId);
+      if (
+        state.role !== "werewolf" ||
+        state.nightSubPhase !== "werewolves" ||
+        !code ||
+        !state.playerId ||
+        !targetId
+      )
+        return;
+      clearTimeout(preselectTimer.current);
+      preselectTimer.current = setTimeout(() => {
+        sendWolfPreselection(code, state.playerId!, targetId).catch(() => {});
+      }, 300);
+    },
+    [code, state.playerId, state.role, state.nightSubPhase]
+  );
 
   const isHunterRevengeAction = useMemo(
     () => state.role === "hunter" && !state.alive && state.daySubPhase === "hunter_revenge",
@@ -67,8 +93,16 @@ export default function PlayerPage() {
       if (payload.winner && payload.roles) {
         setWinner(payload.winner, payload.roles);
       }
+      if (payload.alpha_wolf_id && payload.pack) {
+        setWolfPack(payload.alpha_wolf_id, payload.pack);
+      }
+      if (payload.werewolf_preselections) {
+        for (const [wolfId, targetId] of Object.entries(payload.werewolf_preselections)) {
+          setWolfPreselection(wolfId, targetId);
+        }
+      }
     },
-    [setLastDeaths, setPhase, setPhaseDetail, setPlayers, setPrivate, setWinner]
+    [setLastDeaths, setPhase, setPhaseDetail, setPlayers, setPrivate, setWinner, setWolfPack, setWolfPreselection]
   );
 
   useEffect(() => {
@@ -99,9 +133,34 @@ export default function PlayerPage() {
           Boolean(event.data.alive ?? true),
           state.loverId
         );
+        if (event.data.alpha_wolf_id && event.data.werewolves) {
+          setWolfPack(
+            event.data.alpha_wolf_id as string,
+            event.data.werewolves as WolfPackMember[]
+          );
+        }
+      }
+      if (event.event === "wolf_preselection") {
+        setWolfPreselection(
+          event.data.wolf_id as string,
+          event.data.target_id as string
+        );
+      }
+      if (event.event === "werewolf_prompt") {
+        if (event.data.alpha_wolf_id && event.data.pack) {
+          setWolfPack(
+            event.data.alpha_wolf_id as string,
+            event.data.pack as WolfPackMember[]
+          );
+        }
+      }
+      if (event.event === "intro_narration") {
+        setIntroText(event.data.text as string);
       }
       if (event.event === "phase_changed") {
+        setIntroText(null);
         setPhase("playing");
+        clearWitchPrompt();
         setPhaseDetail(
           (event.data.night_sub_phase as WWPrivateState["night_sub_phase"]) ?? null,
           (event.data.day_sub_phase as WWPrivateState["day_sub_phase"]) ?? null,
@@ -111,6 +170,18 @@ export default function PlayerPage() {
         );
         setSelected("");
         setSelected2("");
+      }
+      if (event.event === "witch_prompt") {
+        const victim = event.data.werewolf_victim as string | null;
+        const players = state.players;
+        const victimPlayer = victim ? players.find((p) => p.id === victim) : null;
+        setWitchPrompt({
+          werewolfVictim: victim,
+          victimName: victimPlayer?.name ?? null,
+          healAvailable: Boolean(event.data.heal_available),
+          killAvailable: Boolean(event.data.kill_available),
+          targets: (event.data.targets as { id: string; name: string }[]) ?? [],
+        });
       }
       if (event.event === "seer_result") {
         setSeerResult(
@@ -136,6 +207,7 @@ export default function PlayerPage() {
       }
     },
     [
+      clearWitchPrompt,
       code,
       navigate,
       setLastDeaths,
@@ -144,10 +216,14 @@ export default function PlayerPage() {
       setPlayers,
       setPrivate,
       setSeerResult,
+      setWitchPrompt,
       setWinner,
+      setWolfPack,
+      setWolfPreselection,
       state.dayNumber,
       state.loverId,
       state.nightNumber,
+      state.players,
     ]
   );
 
@@ -164,8 +240,6 @@ export default function PlayerPage() {
       payload = { action: "werewolf_vote", target: selected };
     } else if (state.nightSubPhase === "seer" && state.role === "seer") {
       payload = { action: "seer_investigate", target: selected };
-    } else if (state.nightSubPhase === "witch" && state.role === "witch") {
-      payload = { action: "witch_kill", target: selected };
     } else if (isHunterRevengeAction) {
       payload = { action: "hunter_shoot", target: selected };
     }
@@ -177,6 +251,19 @@ export default function PlayerPage() {
       setActionSubmitted(true);
       setSelected("");
       setSelected2("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Action failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleWitchAction(action: string, target?: string) {
+    if (!code || !state.playerId) return;
+    setLoading(true);
+    try {
+      await submitNightAction(code, state.playerId, { action, target });
+      setActionSubmitted(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Action failed");
     } finally {
@@ -198,13 +285,21 @@ export default function PlayerPage() {
     }
   }
 
-  const canNightAct = canActInNight(state.role, state.nightSubPhase, state.alive) || isHunterRevengeAction;
+  const isWitchTurn = state.nightSubPhase === "witch" && state.role === "witch" && state.alive;
+  const canNightAct = (!isWitchTurn && canActInNight(state.role, state.nightSubPhase, state.alive)) || isHunterRevengeAction;
   const canVote = state.daySubPhase === "voting" && state.alive;
 
   return (
     <div className="min-h-screen px-4 py-6">
+      {introText !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
+            {introText}
+          </p>
+        </div>
+      )}
       <div className="max-w-lg mx-auto space-y-4">
-        <RoleCard role={state.role} alive={state.alive} />
+        <RoleCard role={state.role} alive={state.alive} isAlpha={state.role === "werewolf" && state.playerId === state.alphaWolfId} />
 
         {(state.nightSubPhase || state.daySubPhase) && (
           <div className="bg-mystery-800 rounded-2xl p-4 border border-mystery-700">
@@ -227,14 +322,37 @@ export default function PlayerPage() {
               prompt={isHunterRevengeAction ? "Choose someone to shoot." : "Choose your target."}
               selected={selected}
               selected2={selected2}
-              onSelect={setSelected}
+              onSelect={state.role === "werewolf" ? handleWolfPreselect : setSelected}
               onSelect2={setSelected2}
               onSubmit={handleNightSubmit}
+              disabled={loading || state.hasSubmittedAction}
+              wolfPreselections={state.role === "werewolf" ? state.wolfPreselections : undefined}
+              packMembers={state.role === "werewolf" ? state.packMembers : undefined}
+              alphaWolfId={state.role === "werewolf" ? state.alphaWolfId : undefined}
+              myId={state.playerId}
+            />
+            {state.hasSubmittedAction && (
+              <p className="text-mystery-300 text-sm">Action submitted. Waiting for the phase to end.</p>
+            )}
+          </div>
+        )}
+
+        {isWitchTurn && state.witchPrompt && (
+          <div className="bg-mystery-800 rounded-2xl p-4 border border-mystery-700 space-y-3">
+            <WitchAction
+              prompt={state.witchPrompt}
+              onAction={handleWitchAction}
               disabled={loading || state.hasSubmittedAction}
             />
             {state.hasSubmittedAction && (
               <p className="text-mystery-300 text-sm">Action submitted. Waiting for the phase to end.</p>
             )}
+          </div>
+        )}
+
+        {isWitchTurn && !state.witchPrompt && !state.hasSubmittedAction && (
+          <div className="bg-mystery-800 rounded-2xl p-4 border border-mystery-700">
+            <p className="text-mystery-300 text-sm">The night stirs... waiting for your prompt.</p>
           </div>
         )}
 

@@ -26,10 +26,13 @@ class MurderRoom(BaseGameRoom):
     cards: list[PlayerCard] | None = None
     murder_clue_dicts: list[dict] | None = None
     difficulty: str | None = None
-    # Timer
-    started_at: datetime | None = None
-    duration_seconds: int = 600
+    # Rounds & timer
+    started_at: datetime | None = None  # overall game start (for scoring)
+    current_round: int = 0  # 0=not started, 1-3 during play
+    round_durations: list[int] = field(default_factory=lambda: [180, 300, 300])
+    round_started_at: datetime | None = None
     timer_task: asyncio.Task | None = None
+    clue_round_assignments: list[list[int]] | None = None
     # Player guesses: {player_id: GuessRecord}
     guesses: dict[str, GuessRecord] = field(default_factory=dict)
 

@@ -26,6 +26,19 @@ export interface WWGameInfo extends BaseGameInfo {
   discussion_seconds: number;
 }
 
+export interface WolfPackMember {
+  id: string;
+  name: string;
+}
+
+export interface WitchPrompt {
+  werewolfVictim: string | null;
+  victimName: string | null;
+  healAvailable: boolean;
+  killAvailable: boolean;
+  targets: { id: string; name: string }[];
+}
+
 export interface WWPrivateState {
   code: string;
   phase: "lobby" | "playing" | "finished";
@@ -45,4 +58,8 @@ export interface WWPrivateState {
     lover_id: string | null;
   };
   roles?: Record<string, Role>;
+  // Wolf-specific (only present for werewolves)
+  alpha_wolf_id?: string;
+  pack?: WolfPackMember[];
+  werewolf_preselections?: Record<string, string>;
 }

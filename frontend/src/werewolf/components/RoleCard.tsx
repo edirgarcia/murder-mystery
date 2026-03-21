@@ -9,13 +9,16 @@ const ROLE_TEXT: Record<Role, { title: string; text: string }> = {
   cupid: { title: "Cupid", text: "Link two lovers at game start." },
 };
 
-export default function RoleCard({ role, alive }: { role: Role | null; alive: boolean }) {
+export default function RoleCard({ role, alive, isAlpha }: { role: Role | null; alive: boolean; isAlpha?: boolean }) {
   if (!role) return null;
   const info = ROLE_TEXT[role];
   return (
     <div className="bg-mystery-800 rounded-2xl p-5 shadow-xl border border-mystery-700">
       <p className="text-xs uppercase tracking-wider text-mystery-400">Your role</p>
-      <h2 className="text-2xl font-bold text-mystery-200 mt-1">{info.title}</h2>
+      <h2 className="text-2xl font-bold text-mystery-200 mt-1">
+        {info.title}
+        {isAlpha && <span className="ml-2" title="Alpha Wolf">&#x1F451;</span>}
+      </h2>
       <p className="text-mystery-300 mt-2 text-sm">{info.text}</p>
       <p className={`mt-3 text-sm font-semibold ${alive ? "text-emerald-300" : "text-red-300"}`}>
         {alive ? "Alive" : "Dead"}

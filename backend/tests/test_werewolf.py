@@ -40,8 +40,8 @@ def client():
 
 class TestRoleAssignment:
     def test_assign_roles_6_players(self):
-        roles = assign_roles([f"p{i}" for i in range(6)])
-        values = list(roles.values())
+        assignment = assign_roles([f"p{i}" for i in range(6)])
+        values = list(assignment.roles.values())
         assert values.count(Role.WEREWOLF) == 2
         assert values.count(Role.SEER) == 1
         assert values.count(Role.WITCH) == 1
@@ -49,14 +49,19 @@ class TestRoleAssignment:
         assert values.count(Role.CUPID) == 1
 
     def test_assign_roles_10_players(self):
-        roles = assign_roles([f"p{i}" for i in range(10)])
-        values = list(roles.values())
+        assignment = assign_roles([f"p{i}" for i in range(10)])
+        values = list(assignment.roles.values())
         assert values.count(Role.WEREWOLF) == 3
 
     def test_assign_roles_15_players(self):
-        roles = assign_roles([f"p{i}" for i in range(15)])
-        values = list(roles.values())
+        assignment = assign_roles([f"p{i}" for i in range(15)])
+        values = list(assignment.roles.values())
         assert values.count(Role.WEREWOLF) == 4
+
+    def test_alpha_wolf_is_a_werewolf(self):
+        assignment = assign_roles([f"p{i}" for i in range(6)])
+        assert assignment.alpha_wolf_id is not None
+        assert assignment.roles[assignment.alpha_wolf_id] == Role.WEREWOLF
 
 
 class TestNightResolution:
@@ -128,6 +133,23 @@ class TestWerewolfVote:
         random.seed(1)
         out = resolve_werewolf_vote({"w1": "p1", "w2": "p2"})
         assert out in {"p1", "p2"}
+
+    def test_alpha_breaks_tie(self):
+        result = resolve_werewolf_vote({"w1": "p1", "w2": "p2"}, alpha_wolf_id="w1")
+        assert result == "p1"
+
+    def test_alpha_breaks_tie_other_direction(self):
+        result = resolve_werewolf_vote({"w1": "p2", "w2": "p1"}, alpha_wolf_id="w1")
+        assert result == "p2"
+
+    def test_majority_overrides_alpha(self):
+        result = resolve_werewolf_vote({"w1": "p1", "w2": "p2", "w3": "p2"}, alpha_wolf_id="w1")
+        assert result == "p2"
+
+    def test_alpha_didnt_vote_falls_to_random(self):
+        random.seed(1)
+        result = resolve_werewolf_vote({"w2": "p1", "w3": "p2"}, alpha_wolf_id="w1")
+        assert result in {"p1", "p2"}
 
 
 class TestWWAPI:

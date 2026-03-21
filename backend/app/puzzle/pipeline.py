@@ -11,7 +11,7 @@ import random
 from dataclasses import dataclass
 
 from .clues import Clue, generate_candidates
-from .distributor import PlayerCard, distribute_clues
+from .distributor import PlayerCard, assign_rounds, distribute_clues
 from .generator import Solution, generate_solution
 from .murder import generate_murder_clues
 from .schema import get_schema
@@ -74,9 +74,10 @@ class Puzzle:
     murder_weapon: str
     cards: list[PlayerCard]
     difficulty: str
+    clue_round_assignments: list[list[int]] | None = None
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "n": self.n,
             "difficulty": self.difficulty,
             "solution": self.solution,
@@ -86,6 +87,9 @@ class Puzzle:
             "murder_clues": [c.to_dict() for c in self.murder_clues],
             "cards": [card.to_dict() for card in self.cards],
         }
+        if self.clue_round_assignments is not None:
+            d["clue_round_assignments"] = self.clue_round_assignments
+        return d
 
 
 def generate_puzzle(
@@ -155,6 +159,10 @@ def generate_puzzle(
                 cards = distribute_clues(names, selected, murder_clues, rng)
                 logger.info("Distributed clues to %d cards", len(cards))
 
+                # Step 6: Assign clues to rounds
+                round_assignments = assign_rounds(cards, murder_clues, rng=rng)
+                logger.info("Assigned clues to 3 rounds")
+
                 return Puzzle(
                     n=n,
                     solution=solution,
@@ -164,6 +172,7 @@ def generate_puzzle(
                     murder_weapon=murder_weapon,
                     cards=cards,
                     difficulty=difficulty,
+                    clue_round_assignments=round_assignments,
                 )
 
             except RuntimeError as e:

@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { GamePhase } from "@shared/types/game";
-import type { DaySubPhase, NightSubPhase, Role, WWPlayerInfo, WinCondition } from "../types/game";
+import type { DaySubPhase, NightSubPhase, Role, WitchPrompt, WolfPackMember, WWPlayerInfo, WinCondition } from "../types/game";
 
 interface WWState {
   code: string | null;
@@ -30,6 +30,10 @@ interface WWState {
   hasSubmittedAction: boolean;
   hasVoted: boolean;
   seerResult: { targetName: string; isWerewolf: boolean } | null;
+  witchPrompt: WitchPrompt | null;
+  alphaWolfId: string | null;
+  packMembers: WolfPackMember[];
+  wolfPreselections: Record<string, string>;
   error: string | null;
 }
 
@@ -43,6 +47,11 @@ type WWAction =
   | { type: "SET_WINNER"; winner: WinCondition; roles: Record<string, Role> }
   | { type: "SET_LAST_DEATHS"; lastDeaths: string[] }
   | { type: "SET_SEER_RESULT"; targetName: string; isWerewolf: boolean }
+  | { type: "SET_WITCH_PROMPT"; prompt: WitchPrompt }
+  | { type: "CLEAR_WITCH_PROMPT" }
+  | { type: "SET_WOLF_PACK"; alphaWolfId: string; pack: WolfPackMember[] }
+  | { type: "SET_WOLF_PRESELECTION"; wolfId: string; targetId: string }
+  | { type: "CLEAR_WOLF_PRESELECTIONS" }
   | { type: "SET_ACTION_SUBMITTED"; value: boolean }
   | { type: "SET_HAS_VOTED"; value: boolean }
   | { type: "SET_ERROR"; error: string }
@@ -70,6 +79,10 @@ const initialState: WWState = {
   hasSubmittedAction: false,
   hasVoted: false,
   seerResult: null,
+  witchPrompt: null,
+  alphaWolfId: null,
+  packMembers: [],
+  wolfPreselections: {},
   error: null,
 };
 
@@ -104,6 +117,8 @@ function reducer(state: WWState, action: WWAction): WWState {
         phaseEndsAt: action.phaseEndsAt,
         hasSubmittedAction: action.nightSubPhase ? false : state.hasSubmittedAction,
         hasVoted: isVoting ? false : state.hasVoted,
+        witchPrompt: action.nightSubPhase !== "witch" ? null : state.witchPrompt,
+        wolfPreselections: action.nightSubPhase === "werewolves" ? {} : state.wolfPreselections,
       };
     }
     case "SET_WINNER":
@@ -120,6 +135,16 @@ function reducer(state: WWState, action: WWAction): WWState {
         ...state,
         seerResult: { targetName: action.targetName, isWerewolf: action.isWerewolf },
       };
+    case "SET_WITCH_PROMPT":
+      return { ...state, witchPrompt: action.prompt };
+    case "CLEAR_WITCH_PROMPT":
+      return { ...state, witchPrompt: null };
+    case "SET_WOLF_PACK":
+      return { ...state, alphaWolfId: action.alphaWolfId, packMembers: action.pack };
+    case "SET_WOLF_PRESELECTION":
+      return { ...state, wolfPreselections: { ...state.wolfPreselections, [action.wolfId]: action.targetId } };
+    case "CLEAR_WOLF_PRESELECTIONS":
+      return { ...state, wolfPreselections: {} };
     case "SET_ACTION_SUBMITTED":
       return { ...state, hasSubmittedAction: action.value };
     case "SET_HAS_VOTED":
@@ -178,6 +203,20 @@ export function useWWActions() {
       (targetName: string, isWerewolf: boolean) => dispatch({ type: "SET_SEER_RESULT", targetName, isWerewolf }),
       [dispatch]
     ),
+    setWitchPrompt: useCallback(
+      (prompt: WitchPrompt) => dispatch({ type: "SET_WITCH_PROMPT", prompt }),
+      [dispatch]
+    ),
+    clearWitchPrompt: useCallback(() => dispatch({ type: "CLEAR_WITCH_PROMPT" }), [dispatch]),
+    setWolfPack: useCallback(
+      (alphaWolfId: string, pack: WolfPackMember[]) => dispatch({ type: "SET_WOLF_PACK", alphaWolfId, pack }),
+      [dispatch]
+    ),
+    setWolfPreselection: useCallback(
+      (wolfId: string, targetId: string) => dispatch({ type: "SET_WOLF_PRESELECTION", wolfId, targetId }),
+      [dispatch]
+    ),
+    clearWolfPreselections: useCallback(() => dispatch({ type: "CLEAR_WOLF_PRESELECTIONS" }), [dispatch]),
     setActionSubmitted: useCallback((value: boolean) => dispatch({ type: "SET_ACTION_SUBMITTED", value }), [dispatch]),
     setHasVoted: useCallback((value: boolean) => dispatch({ type: "SET_HAS_VOTED", value }), [dispatch]),
     setError: useCallback((error: string) => dispatch({ type: "SET_ERROR", error }), [dispatch]),

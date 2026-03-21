@@ -86,11 +86,31 @@ async def _finish_game(room) -> None:
     )
 
 
-async def _timer_expire(room) -> None:
-    """Sleep for the game duration, then finish the game."""
+async def _advance_round(room) -> None:
+    """Advance to the next round, start its timer, and broadcast."""
+    room.current_round += 1
+    room.round_started_at = datetime.now(timezone.utc)
+    room.timer_task = asyncio.create_task(_round_expire(room, room.current_round))
+
+    await broadcast(room, "round_advanced", {
+        "round": room.current_round,
+        "started_at": room.round_started_at.isoformat(),
+        "duration_seconds": room.round_durations[room.current_round - 1],
+    })
+
+
+async def _round_expire(room, expected_round: int) -> None:
+    """Sleep for the current round's duration, then advance or finish."""
     try:
-        await asyncio.sleep(room.duration_seconds)
-        if room.phase == GamePhase.PLAYING:
+        await asyncio.sleep(room.round_durations[expected_round - 1])
+        if room.phase != GamePhase.PLAYING:
+            return
+        # Guard against race with host-triggered advance
+        if room.current_round != expected_round:
+            return
+        if room.current_round < 3:
+            await _advance_round(room)
+        else:
             await _finish_game(room)
     except asyncio.CancelledError:
         pass
@@ -157,8 +177,9 @@ async def start_game(
     room.murder_weapon = puzzle.murder_weapon
     room.cards = puzzle.cards
     room.murder_clue_dicts = [c.to_dict() for c in puzzle.murder_clues]
+    room.clue_round_assignments = puzzle.clue_round_assignments
     room.phase = GamePhase.PLAYING
-    room.duration_seconds = req.timer_minutes * 60
+    room.round_durations = [req.round_minutes * 60] * 3
 
     await broadcast(room, "game_started", {
         "message": "The game has begun!",
@@ -170,7 +191,7 @@ async def start_game(
 
 @router.post("/{code}/begin")
 async def begin_game(code: str, x_player_id: str = Header(...)) -> dict:
-    """Start the countdown timer. Called by the host after the intro sequence."""
+    """Start round 1. Called by the host after the intro sequence."""
     room = store.get_room(code)
     if not room:
         raise HTTPException(status_code=404, detail="Game not found")
@@ -181,14 +202,45 @@ async def begin_game(code: str, x_player_id: str = Header(...)) -> dict:
     if room.started_at:
         raise HTTPException(status_code=400, detail="Timer already started")
 
-    room.started_at = datetime.now(timezone.utc)
-    room.timer_task = asyncio.create_task(_timer_expire(room))
+    now = datetime.now(timezone.utc)
+    room.started_at = now
+    room.current_round = 1
+    room.round_started_at = now
+    room.timer_task = asyncio.create_task(_round_expire(room, 1))
 
-    await broadcast(room, "timer_started", {
-        "started_at": room.started_at.isoformat(),
-        "duration_seconds": room.duration_seconds,
+    await broadcast(room, "round_started", {
+        "round": 1,
+        "started_at": now.isoformat(),
+        "duration_seconds": room.round_durations[0],
+        "total_rounds": 3,
     })
-    return {"status": "timer_started"}
+    return {"status": "round_started"}
+
+
+@router.post("/{code}/advance")
+async def advance_round(code: str, x_player_id: str = Header(...)) -> dict:
+    """Host advances to next round early, or ends game if on round 3."""
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can advance rounds")
+    if room.phase != GamePhase.PLAYING:
+        raise HTTPException(status_code=400, detail="Game not in playing phase")
+    if room.current_round < 1:
+        raise HTTPException(status_code=400, detail="Game not started yet")
+
+    # Cancel current round timer
+    if room.timer_task and not room.timer_task.done():
+        room.timer_task.cancel()
+        room.timer_task = None
+
+    if room.current_round < 3:
+        await _advance_round(room)
+        return {"status": "advanced", "round": room.current_round}
+    else:
+        await _finish_game(room)
+        return {"status": "finished"}
 
 
 @router.get("/{code}/card", response_model=PlayerCardResponse)
@@ -206,9 +258,31 @@ async def get_card(code: str, x_player_id: str = Header(...)) -> PlayerCardRespo
     if not card:
         raise HTTPException(status_code=404, detail="Card not found")
 
+    # Get round assignments for this player's card
+    player = store.get_player(room, x_player_id)
+    player_idx = room.players.index(player)
+    round_assignments = (
+        room.clue_round_assignments[player_idx]
+        if room.clue_round_assignments and player_idx < len(room.clue_round_assignments)
+        else None
+    )
+
+    # Show at least round 1 clues (even before begin is called)
+    visible_round = max(1, room.current_round)
+    # In finished phase, show all clues
+    if room.phase == GamePhase.FINISHED:
+        visible_round = 3
+
+    clue_dicts = card.to_dict()["clues"]
+    clues = []
+    for i, c in enumerate(clue_dicts):
+        clue_round = round_assignments[i] if round_assignments else 1
+        if clue_round <= visible_round:
+            clues.append(ClueInfo(type=c["type"], text=c["text"], round=clue_round))
+
     return PlayerCardResponse(
         character_name=card.character_name,
-        clues=[ClueInfo(type=c["type"], text=c["text"]) for c in card.to_dict()["clues"]],
+        clues=clues,
     )
 
 
@@ -221,6 +295,9 @@ async def make_guess(
         raise HTTPException(status_code=404, detail="Game not found")
     if room.phase != GamePhase.PLAYING:
         raise HTTPException(status_code=400, detail="Game not in guess phase")
+
+    if room.current_round < 2:
+        raise HTTPException(status_code=400, detail="Accusations are not allowed until Round 2")
 
     if store.is_host(room, x_player_id):
         raise HTTPException(status_code=403, detail="Host cannot guess")

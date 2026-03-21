@@ -133,8 +133,11 @@ def check_win_condition(
     return None
 
 
-def resolve_werewolf_vote(votes: dict[str, str]) -> str | None:
-    """Resolve werewolf pack vote. Majority wins, random on tie."""
+def resolve_werewolf_vote(
+    votes: dict[str, str],
+    alpha_wolf_id: str | None = None,
+) -> str | None:
+    """Resolve werewolf pack vote. Majority wins, Alpha breaks ties."""
     if not votes:
         return None
 
@@ -144,5 +147,14 @@ def resolve_werewolf_vote(votes: dict[str, str]) -> str | None:
 
     max_votes = max(vote_counts.values())
     top_targets = [pid for pid, count in vote_counts.items() if count == max_votes]
+
+    if len(top_targets) == 1:
+        return top_targets[0]
+
+    # Tie-breaking: Alpha's vote wins if their target is among the tied
+    if alpha_wolf_id and alpha_wolf_id in votes:
+        alpha_choice = votes[alpha_wolf_id]
+        if alpha_choice in top_targets:
+            return alpha_choice
 
     return random.choice(top_targets)

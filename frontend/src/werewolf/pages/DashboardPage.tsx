@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { WSEvent } from "@shared/types/game";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
@@ -24,6 +24,8 @@ export default function DashboardPage() {
     addPlayer,
     setError,
   } = useWWActions();
+
+  const [introText, setIntroText] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.playerId || !code) return;
@@ -63,7 +65,11 @@ export default function DashboardPage() {
         alive: true,
       });
     }
+    if (event.event === "intro_narration") {
+      setIntroText(event.data.text as string);
+    }
     if (event.event === "phase_changed") {
+      setIntroText(null);
       setPhase("playing");
       setPhaseDetail(
         (event.data.night_sub_phase as WWPrivateState["night_sub_phase"]) ?? null,
@@ -96,6 +102,13 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen px-4 py-6">
+      {introText !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
+            {introText}
+          </p>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto space-y-4">
         <div className="bg-mystery-800 rounded-2xl p-4 border border-mystery-700">
           <p className="text-xs uppercase tracking-wider text-mystery-400">Host Dashboard</p>

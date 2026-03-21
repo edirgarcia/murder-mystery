@@ -21,14 +21,14 @@ export async function startGame(
   code: string,
   hostId: string,
   difficulty?: Difficulty,
-  timerMinutes?: number
+  roundMinutes?: number
 ): Promise<void> {
   await request(`${BASE}/${code}/start`, {
     method: "POST",
     headers: { "X-Player-Id": hostId },
     body: JSON.stringify({
       difficulty: difficulty ?? "medium",
-      timer_minutes: timerMinutes ?? 10,
+      round_minutes: roundMinutes ?? 5,
     }),
   });
 }
@@ -63,6 +63,16 @@ export async function beginGame(
   hostId: string
 ): Promise<void> {
   await request(`${BASE}/${code}/begin`, {
+    method: "POST",
+    headers: { "X-Player-Id": hostId },
+  });
+}
+
+export async function advanceRound(
+  code: string,
+  hostId: string
+): Promise<void> {
+  await request(`${BASE}/${code}/advance`, {
     method: "POST",
     headers: { "X-Player-Id": hostId },
   });

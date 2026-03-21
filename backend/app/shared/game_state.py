@@ -41,6 +41,9 @@ class GameStore[T: BaseGameRoom]:
         self._room_factory = room_factory
 
     def _generate_code(self) -> str:
+        # TODO: remove hardcoded code before deploying
+        if "AAAA" not in self._rooms:
+            return "AAAA"
         while True:
             code = "".join(
                 random.choices(string.ascii_uppercase, k=ROOM_CODE_LENGTH)

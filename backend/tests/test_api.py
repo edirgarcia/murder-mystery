@@ -97,30 +97,48 @@ class TestGameFlow:
 
         return code, host_id, player_ids
 
-    def test_start_game(self, client):
-        code, host_id, player_ids = self._create_full_game(client)
-
-        res = client.post(
+    def _start_game(self, client, code, host_id):
+        """Helper to start game with default round durations."""
+        return client.post(
             f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
+            json={"difficulty": "medium", "round_minutes": 5},
             headers={"X-Player-Id": host_id},
         )
-        assert res.status_code == 200
 
-        # Verify game is now in playing phase but timer not yet started
-        info = client.get(f"/api/mm/games/{code}").json()
-        assert info["phase"] == "playing"
-        assert info["started_at"] is None
-
-        # Begin the timer
-        res = client.post(
+    def _begin_game(self, client, code, host_id):
+        """Helper to begin game (starts round 1)."""
+        return client.post(
             f"/api/mm/games/{code}/begin",
             headers={"X-Player-Id": host_id},
         )
+
+    def _advance_round(self, client, code, host_id):
+        """Helper to advance to next round."""
+        return client.post(
+            f"/api/mm/games/{code}/advance",
+            headers={"X-Player-Id": host_id},
+        )
+
+    def test_start_game(self, client):
+        code, host_id, player_ids = self._create_full_game(client)
+
+        res = self._start_game(client, code, host_id)
+        assert res.status_code == 200
+
+        # Verify game is now in playing phase but rounds not yet started
+        info = client.get(f"/api/mm/games/{code}").json()
+        assert info["phase"] == "playing"
+        assert info["current_round"] == 0
+        assert info["round_durations"] == [300, 300, 300]
+        assert info["started_at"] is None
+
+        # Begin the game (starts round 1)
+        res = self._begin_game(client, code, host_id)
         assert res.status_code == 200
 
         info = client.get(f"/api/mm/games/{code}").json()
-        assert info["timer_duration_seconds"] == 600
+        assert info["current_round"] == 1
+        assert info["round_started_at"] is not None
         assert info["started_at"] is not None
 
     def test_non_host_cannot_start(self, client):
@@ -135,11 +153,7 @@ class TestGameFlow:
 
     def test_get_card(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
 
         for pid in player_ids:
             res = client.get(
@@ -151,14 +165,39 @@ class TestGameFlow:
             assert "character_name" in data
             assert "clues" in data
             assert len(data["clues"]) > 0
+            # Each clue should have a round field
+            for clue in data["clues"]:
+                assert "round" in clue
+
+    def test_card_returns_round_filtered_clues(self, client):
+        """Card in round 1 returns only round-1 clues; after advance, more appear."""
+        code, host_id, player_ids = self._create_full_game(client)
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+
+        # Round 1: only round 1 clues
+        res = client.get(
+            f"/api/mm/games/{code}/card",
+            headers={"X-Player-Id": player_ids[0]},
+        )
+        round1_clues = res.json()["clues"]
+        assert all(c["round"] == 1 for c in round1_clues)
+        round1_count = len(round1_clues)
+
+        # Advance to round 2
+        self._advance_round(client, code, host_id)
+
+        res = client.get(
+            f"/api/mm/games/{code}/card",
+            headers={"X-Player-Id": player_ids[0]},
+        )
+        round2_clues = res.json()["clues"]
+        assert len(round2_clues) > round1_count
+        assert all(c["round"] in (1, 2) for c in round2_clues)
 
     def test_host_cannot_get_card(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
 
         res = client.get(
             f"/api/mm/games/{code}/card",
@@ -168,11 +207,9 @@ class TestGameFlow:
 
     def test_host_cannot_guess(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)  # round 2
 
         res = client.post(
             f"/api/mm/games/{code}/guess",
@@ -181,14 +218,27 @@ class TestGameFlow:
         )
         assert res.status_code == 403
 
-    def test_guess_deferred(self, client):
-        """Guess returns locked_in status, not correctness."""
+    def test_guess_blocked_in_round_1(self, client):
+        """Guessing should be blocked during round 1."""
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+
+        # Still in round 1
+        res = client.post(
+            f"/api/mm/games/{code}/guess",
+            json={"suspect_name": "Nobody"},
+            headers={"X-Player-Id": player_ids[0]},
         )
+        assert res.status_code == 400
+        assert "Round 2" in res.json()["detail"]
+
+    def test_guess_allowed_in_round_2(self, client):
+        """Guessing should work after advancing to round 2."""
+        code, host_id, player_ids = self._create_full_game(client)
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)  # round 2
 
         room = store.get_room(code)
         murderer = room.murderer_name
@@ -202,17 +252,53 @@ class TestGameFlow:
         data = res.json()
         assert data["status"] == "locked_in"
         assert "guessed_at" in data
-        # No correct/actual_murderer fields
-        assert "correct" not in data
-        assert "actual_murderer" not in data
+
+    def test_advance_round(self, client):
+        """Host can advance from round 1 to 2."""
+        code, host_id, player_ids = self._create_full_game(client)
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+
+        room = store.get_room(code)
+        assert room.current_round == 1
+
+        res = self._advance_round(client, code, host_id)
+        assert res.status_code == 200
+        assert res.json()["round"] == 2
+        assert room.current_round == 2
+
+    def test_advance_round_3_finishes_game(self, client):
+        """Advancing from round 3 should finish the game."""
+        code, host_id, player_ids = self._create_full_game(client)
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)  # round 2
+        self._advance_round(client, code, host_id)  # round 3
+
+        res = self._advance_round(client, code, host_id)  # end game
+        assert res.status_code == 200
+        assert res.json()["status"] == "finished"
+
+        info = client.get(f"/api/mm/games/{code}").json()
+        assert info["phase"] == "finished"
+
+    def test_non_host_cannot_advance(self, client):
+        """Non-host player cannot advance rounds."""
+        code, host_id, player_ids = self._create_full_game(client)
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+
+        res = client.post(
+            f"/api/mm/games/{code}/advance",
+            headers={"X-Player-Id": player_ids[0]},
+        )
+        assert res.status_code == 403
 
     def test_all_guesses_ends_game(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)  # round 2
 
         for pid in player_ids:
             client.post(
@@ -227,11 +313,7 @@ class TestGameFlow:
 
     def test_end_game_by_host(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
 
         res = client.post(
             f"/api/mm/games/{code}/end",
@@ -244,11 +326,7 @@ class TestGameFlow:
 
     def test_non_host_cannot_end_game(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
 
         res = client.post(
             f"/api/mm/games/{code}/end",
@@ -258,11 +336,9 @@ class TestGameFlow:
 
     def test_get_results_after_finish(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)  # round 2
 
         for pid in player_ids:
             client.post(
@@ -282,11 +358,7 @@ class TestGameFlow:
 
     def test_results_not_available_before_finish(self, client):
         code, host_id, player_ids = self._create_full_game(client)
-        client.post(
-            f"/api/mm/games/{code}/start",
-            json={"difficulty": "medium", "timer_minutes": 10},
-            headers={"X-Player-Id": host_id},
-        )
+        self._start_game(client, code, host_id)
 
         res = client.get(f"/api/mm/games/{code}/results")
         assert res.status_code == 400

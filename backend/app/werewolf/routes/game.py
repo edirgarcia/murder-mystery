@@ -34,6 +34,7 @@ from ..models import (
     NightSubPhase,
     Role,
     StartWWRequest,
+    WolfPreselectRequest,
 )
 from ..roles import assign_roles
 from ...shared.models import GamePhase
@@ -222,7 +223,9 @@ async def start_game(
     if len(room.players) < MIN_PLAYERS:
         raise HTTPException(status_code=400, detail=f"Need at least {MIN_PLAYERS} players")
 
-    role_map = assign_roles([p.id for p in room.players])
+    assignment = assign_roles([p.id for p in room.players])
+    role_map = assignment.roles
+    room.alpha_wolf_id = assignment.alpha_wolf_id
     room.game_players = {
         p.id: WWPlayer(
             id=p.id,
@@ -237,6 +240,7 @@ async def start_game(
     room.night_sub_phase = None
     room.day_sub_phase = None
     room.werewolf_votes = {}
+    room.werewolf_preselections = {}
     room.werewolf_victim = None
     room.seer_target = None
     room.witch_heal_used = False
@@ -266,6 +270,7 @@ async def start_game(
         }
         if gp.role == Role.WEREWOLF:
             payload["werewolves"] = wolves
+            payload["alpha_wolf_id"] = room.alpha_wolf_id
         await _send_to_player(room, pid, "role_assigned", payload)
 
     await broadcast(room, "game_started", {
@@ -410,6 +415,44 @@ async def submit_night_action(
     raise HTTPException(status_code=400, detail="Not accepting night actions right now")
 
 
+@router.post("/{code}/wolf-preselect")
+async def wolf_preselect(
+    code: str,
+    req: WolfPreselectRequest,
+    x_player_id: str = Header(...),
+) -> dict:
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if room.phase != GamePhase.PLAYING:
+        raise HTTPException(status_code=400, detail="Game not in progress")
+    if room.night_sub_phase != NightSubPhase.WEREWOLVES:
+        raise HTTPException(status_code=400, detail="Not in werewolf phase")
+
+    gp = room.game_players.get(x_player_id)
+    if not gp or gp.role != Role.WEREWOLF or not gp.alive:
+        raise HTTPException(status_code=403, detail="Not an alive werewolf")
+
+    target = room.game_players.get(req.target)
+    if not target or not target.alive:
+        raise HTTPException(status_code=400, detail="Invalid target")
+
+    room.werewolf_preselections[x_player_id] = req.target
+
+    # Broadcast to other wolves
+    alive_wolves = _alive_werewolves(room)
+    for w in alive_wolves:
+        if w.id != x_player_id:
+            await _send_to_player(room, w.id, "wolf_preselection", {
+                "wolf_id": x_player_id,
+                "wolf_name": gp.name,
+                "target_id": req.target,
+                "target_name": target.name,
+            })
+
+    return {"status": "accepted"}
+
+
 @router.post("/{code}/vote")
 async def submit_vote(
     code: str,
@@ -487,6 +530,15 @@ async def get_player_state(code: str, x_player_id: str = Header(...)) -> dict:
             "lover_id": gp.lover_id,
         }
 
+    if gp and gp.role == Role.WEREWOLF:
+        state["alpha_wolf_id"] = room.alpha_wolf_id
+        state["pack"] = [
+            {"id": p.id, "name": p.name}
+            for p in room.game_players.values()
+            if p.role == Role.WEREWOLF and p.alive
+        ]
+        state["werewolf_preselections"] = room.werewolf_preselections
+
     if room.phase == GamePhase.FINISHED:
         state["roles"] = {pid: p.role.value for pid, p in room.game_players.items()}
 
@@ -495,6 +547,20 @@ async def get_player_state(code: str, x_player_id: str = Header(...)) -> dict:
 
 async def _run_game(room: WerewolfRoom) -> None:
     try:
+        # --- Intro sequence ---
+        narration = [
+            ("The village settles in for the night...", 3),
+            ("But not everyone here is who they seem.", 3),
+            ("Among you, werewolves lurk in the shadows.", 3),
+            ("First night begins in...", 1),
+            ("3", 1),
+            ("2", 1),
+            ("1", 1),
+        ]
+        for text, delay in narration:
+            await broadcast(room, "intro_narration", {"text": text})
+            await asyncio.sleep(delay)
+
         # Night 0: Cupid
         room.night_sub_phase = NightSubPhase.CUPID
         room.day_sub_phase = None
@@ -538,6 +604,7 @@ async def _run_game(room: WerewolfRoom) -> None:
             # Werewolves
             room.night_sub_phase = NightSubPhase.WEREWOLVES
             room.werewolf_votes = {}
+            room.werewolf_preselections = {}
             room.night_action_complete = asyncio.Event()
             _set_phase_end(room, WEREWOLF_VOTE_SECONDS)
             await broadcast(room, "phase_changed", {
@@ -547,6 +614,7 @@ async def _run_game(room: WerewolfRoom) -> None:
                 "phase_ends_at": room.phase_ends_at,
             })
             alive_wolves = _alive_werewolves(room)
+            pack = [{"id": w.id, "name": w.name} for w in alive_wolves]
             for w in alive_wolves:
                 await _send_to_player(room, w.id, "werewolf_prompt", {
                     "targets": [
@@ -554,6 +622,8 @@ async def _run_game(room: WerewolfRoom) -> None:
                         for p in room.game_players.values()
                         if p.alive and p.id != w.id
                     ],
+                    "alpha_wolf_id": room.alpha_wolf_id,
+                    "pack": pack,
                 })
             try:
                 await asyncio.wait_for(
@@ -562,7 +632,7 @@ async def _run_game(room: WerewolfRoom) -> None:
                 )
             except asyncio.TimeoutError:
                 pass
-            room.werewolf_victim = resolve_werewolf_vote(room.werewolf_votes)
+            room.werewolf_victim = resolve_werewolf_vote(room.werewolf_votes, room.alpha_wolf_id)
 
             # Seer
             room.night_sub_phase = NightSubPhase.SEER
