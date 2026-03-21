@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import os
+import re
+from pathlib import Path
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from .shared.config import CORS_ORIGINS
 from .shared.routes.lobby import create_lobby_router
@@ -26,6 +32,21 @@ from .prisoners_dilemma.info import build_game_info as pd_build_game_info
 from .prisoners_dilemma.routes import game as pd_game
 
 app = FastAPI(title="Party Games Platform", version="0.2.0")
+
+# In production, the frontend sends requests like /murder-mystery/api/mm/games/...
+# (Vite dev proxy strips the game prefix; this middleware does the same in prod.)
+_GAME_PREFIX_RE = re.compile(
+    r"^/(murder-mystery|funny-questions|werewolf|prisoners-dilemma)(/api/.*)"
+)
+
+
+@app.middleware("http")
+async def strip_game_prefix(request: Request, call_next: ...) -> Response:
+    m = _GAME_PREFIX_RE.match(request.scope["path"])
+    if m:
+        request.scope["path"] = m.group(2)
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,3 +89,32 @@ app.include_router(pd_ws)
 @app.get("/api/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+# --- Static file serving (production only) ---
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+if STATIC_DIR.is_dir():
+    # SPA fallback: serve each game's HTML for its client-side routes
+    _SPA_GAMES = {
+        "murder-mystery": "murder-mystery.html",
+        "funny-questions": "funny-questions.html",
+        "werewolf": "werewolf.html",
+        "prisoners-dilemma": "prisoners-dilemma.html",
+    }
+
+    @app.get("/")
+    async def root_index():
+        return FileResponse(STATIC_DIR / "index.html")
+
+    for _game, _html in _SPA_GAMES.items():
+
+        def _make_handler(html_file: str):
+            async def _handler():
+                return FileResponse(STATIC_DIR / html_file)
+            return _handler
+
+        app.get(f"/{_game}/{{path:path}}")(_make_handler(_html))
+
+    # Serve Vite build assets (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")

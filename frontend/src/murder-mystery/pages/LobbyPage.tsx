@@ -11,7 +11,7 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setGame, setPlayers, addPlayer, setPhase, setError, setTimerInfo } = useGameActions();
+  const { setGame, setPlayers, addPlayer, setPhase, setError, setRoundInfo } = useGameActions();
   const [showIntro, setShowIntro] = useState(false);
   const [introPlayerNames, setIntroPlayerNames] = useState<string[]>([]);
   const [introWeapon, setIntroWeapon] = useState<string | null>(null);
@@ -41,8 +41,9 @@ export default function LobbyPage() {
       setPlayers(info.players);
       if (info.phase === "playing") {
         setPhase("playing");
-        if (info.started_at && info.timer_duration_seconds) {
-          setTimerInfo(info.started_at, info.timer_duration_seconds);
+        if (info.current_round && info.round_started_at) {
+          const duration = info.round_durations[info.current_round - 1] ?? 0;
+          setRoundInfo(info.current_round, info.round_started_at, duration);
         }
         navigate(`/game/${code}`);
       }
@@ -77,7 +78,7 @@ export default function LobbyPage() {
           break;
       }
     },
-    [code, navigate, addPlayer, setPhase, setError, setTimerInfo]
+    [code, navigate, addPlayer, setPhase, setError, setRoundInfo]
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
