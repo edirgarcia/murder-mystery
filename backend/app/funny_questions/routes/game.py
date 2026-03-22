@@ -26,6 +26,81 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/fq/games", tags=["fq-game"])
 
 
+async def _fq_narrate(room, text: str, sound: str) -> None:
+    """Broadcast a narration line and wait for dashboard audio to finish."""
+    room.narration_ack = asyncio.Event()
+    await broadcast(room, "intro_narration", {"text": text, "sound": sound})
+    if room.connections:
+        try:
+            await asyncio.wait_for(room.narration_ack.wait(), timeout=15)
+        except asyncio.TimeoutError:
+            pass
+    room.narration_ack = None
+
+
+async def _run_fq_intro(room) -> None:
+    """Run intro narration explaining the rules, then start the game loop."""
+    try:
+        # Give clients time to navigate from lobby to dashboard/vote pages
+        # and establish new WS connections
+        await asyncio.sleep(2)
+        # Then wait for at least one WS connection
+        for _ in range(20):
+            if room.connections:
+                break
+            await asyncio.sleep(0.25)
+
+        narration = [
+            ("Welcome to Silly Questions!", "fq-welcome.mp3"),
+            ("Here's how it works.", "fq-how.mp3"),
+            (
+                "A question will appear on the big screen.",
+                "fq-question.mp3",
+            ),
+            (
+                "Vote on your phone for who in the group it fits best.",
+                "fq-vote.mp3",
+            ),
+            (
+                "If you vote with the majority, you earn a point.",
+                "fq-scoring.mp3",
+            ),
+            (
+                "Vote for yourself and get the most votes? That's three points!",
+                "fq-selfvote.mp3",
+            ),
+            (
+                "But watch out! If you vote for yourself and nobody else does, you get the Shame.",
+                "fq-shame.mp3",
+            ),
+            (
+                "While holding the Shame, you can't earn any points.",
+                "fq-no-points.mp3",
+            ),
+            (
+                "To clear it, vote for yourself and hope someone else does too, or wait for someone else to get the Mark.",
+                "fq-clear-shame.mp3",
+            ),
+            (
+                "First to reach the target score wins!",
+                "fq-win.mp3",
+            ),
+            ("Let the games begin!", "fq-begin.mp3"),
+        ]
+        for text, sound in narration:
+            await _fq_narrate(room, text, sound)
+
+        # Clear the overlay before starting gameplay
+        await broadcast(room, "intro_done", {})
+
+        # Now start the actual game loop
+        await _run_game(room)
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        logger.exception("FQ intro crashed for room %s", room.code)
+
+
 @router.post("/{code}/start")
 async def start_game(
     code: str,
@@ -61,9 +136,9 @@ async def start_game(
     room.scores = {p.id: 0 for p in room.players}
     room.phase = GamePhase.PLAYING
 
-    # Start game loop before broadcast so it always runs
-    room.game_task = asyncio.create_task(_run_game(room))
-    print(f"[FQ] Game task created for room {code}, players={len(room.players)}")
+    # Start intro → game loop (intro narration then auto-starts game loop)
+    room.game_task = asyncio.create_task(_run_fq_intro(room))
+    print(f"[FQ] Intro+game task created for room {code}, players={len(room.players)}")
 
     await broadcast(room, "game_started", {
         "message": "Game is starting!",

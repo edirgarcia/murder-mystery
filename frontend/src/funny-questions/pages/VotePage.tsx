@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useFQ, useFQActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
@@ -17,6 +17,7 @@ export default function VotePage() {
   const { setGame, setPhase, setPlayers, addPlayer, newQuestion, setVoted, setRoundResult, setWinner, setPointsToWin, setError } = useFQActions();
   const [selected, setSelected] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [narrationText, setNarrationText] = useState<string | null>(null);
 
   // Restore from localStorage
   useEffect(() => {
@@ -67,9 +68,16 @@ export default function VotePage() {
           break;
         case "game_started":
           setPhase("playing");
+          setNarrationText("");
           if (event.data.points_to_win) {
             setPointsToWin(event.data.points_to_win as number);
           }
+          break;
+        case "intro_narration":
+          setNarrationText(event.data.text as string);
+          break;
+        case "intro_done":
+          setNarrationText(null);
           break;
         case "new_question":
           setSelected(null);
@@ -106,6 +114,17 @@ export default function VotePage() {
       setError(e.message);
       setSubmitting(false);
     }
+  }
+
+  // Intro narration overlay
+  if (narrationText !== null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black/90 px-4">
+        <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
+          {narrationText}
+        </p>
+      </div>
+    );
   }
 
   // Waiting for first question

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useFQ, useFQActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
@@ -15,6 +15,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { state } = useFQ();
   const { setGame, setPlayers, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setScores, setPointsToWin } = useFQActions();
+  const [narrationText, setNarrationText] = useState<string | null>(null);
+  const sendAckRef = useRef<() => void>(() => {});
 
   // Restore from localStorage
   useEffect(() => {
@@ -56,9 +58,24 @@ export default function DashboardPage() {
           break;
         case "game_started":
           setPhase("playing");
+          setNarrationText("");
           if (event.data.points_to_win) {
             setPointsToWin(event.data.points_to_win as number);
           }
+          break;
+        case "intro_narration": {
+          setNarrationText(event.data.text as string);
+          const sound = event.data.sound as string | undefined;
+          if (sound) {
+            const audio = new Audio(`/funny-questions/audio/${sound}`);
+            audio.onended = () => sendAckRef.current();
+            audio.onerror = () => sendAckRef.current();
+            audio.play().catch(() => sendAckRef.current());
+          }
+          break;
+        }
+        case "intro_done":
+          setNarrationText(null);
           break;
         case "new_question":
           newQuestion(
@@ -83,7 +100,14 @@ export default function DashboardPage() {
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
-  useWebSocket(wsUrl, handleWSEvent);
+  const wsRef = useWebSocket(wsUrl, handleWSEvent);
+
+  sendAckRef.current = () => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "narration_ack" }));
+    }
+  };
 
   // Finished
   if (state.phase === "finished" || state.winner) {
@@ -110,6 +134,13 @@ export default function DashboardPage() {
   if (state.phase === "playing") {
     return (
       <div className="min-h-screen px-4 py-6">
+        {(narrationText !== null || !state.currentQuestion) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+            <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
+              {narrationText || ""}
+            </p>
+          </div>
+        )}
         <div className="max-w-lg mx-auto space-y-6">
           <div className="text-center">
             <p className="text-mystery-400 text-sm uppercase tracking-wider">Host Dashboard</p>

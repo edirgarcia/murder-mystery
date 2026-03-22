@@ -24,6 +24,8 @@ class FQRoom(BaseGameRoom):
     # Signals
     vote_complete: asyncio.Event | None = None
     game_task: asyncio.Task | None = None
+    # Narration
+    narration_ack: asyncio.Event | None = None
     # Config
     points_to_win: int = 20
     voting_ends_at: str | None = None
