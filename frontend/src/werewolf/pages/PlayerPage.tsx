@@ -155,7 +155,11 @@ export default function PlayerPage() {
         }
       }
       if (event.event === "intro_narration") {
-        setIntroText(event.data.text as string);
+        if (event.data.clear_overlay) {
+          setIntroText(null);
+        } else {
+          setIntroText(event.data.text as string);
+        }
       }
       if (event.event === "phase_changed") {
         setIntroText(null);
@@ -190,6 +194,7 @@ export default function PlayerPage() {
         );
       }
       if (event.event === "death_announcement" || event.event === "vote_result") {
+        setIntroText(null);
         const players = event.data.players as WWPrivateState["players"] | undefined;
         if (players) setPlayers(players);
         const deaths = event.data.deaths as string[] | undefined;

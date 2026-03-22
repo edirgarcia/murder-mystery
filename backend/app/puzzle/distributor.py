@@ -134,9 +134,9 @@ def assign_rounds(
 ) -> list[list[int]]:
     """Assign each clue on each card to a round (1..num_rounds).
 
-    Murder chain clues are spread across different rounds so no single
-    round reveals the entire chain.  Non-murder clues are distributed
-    as evenly as possible across rounds.
+    Round 1: each card gets exactly 1 clue. Exactly one card receives a
+    murder clue in round 1; all other cards get a non-murder clue.
+    Rounds 2-3: remaining clues are distributed randomly.
 
     Returns a parallel structure: ``assignments[card_idx][clue_idx]``
     is the round number (1-based) for that clue.
@@ -144,24 +144,40 @@ def assign_rounds(
     rng = rng or random.Random()
     murder_texts = {c.render() for c in murder_clues}
 
-    assignments: list[list[int]] = []
-
+    # Build per-card murder/non-murder indices
+    per_card: list[tuple[list[int], list[int]]] = []
     for card in cards:
-        n_clues = len(card.clues)
-        rounds: list[int] = [0] * n_clues
-
-        # Identify murder vs non-murder clue indices
         murder_idxs = [i for i, c in enumerate(card.clues) if c.render() in murder_texts]
         other_idxs = [i for i, c in enumerate(card.clues) if c.render() not in murder_texts]
+        per_card.append((murder_idxs, other_idxs))
 
-        # Spread murder clues across rounds (cycling 1, 2, 3, 1, ...)
-        for seq, idx in enumerate(murder_idxs):
-            rounds[idx] = (seq % num_rounds) + 1
+    # Pick exactly one card to reveal a murder clue in round 1
+    cards_with_murder = [ci for ci, (m, _) in enumerate(per_card) if m]
+    murder_r1_card = rng.choice(cards_with_murder) if cards_with_murder else -1
 
-        # Distribute non-murder clues evenly across rounds
-        rng.shuffle(other_idxs)
-        for seq, idx in enumerate(other_idxs):
-            rounds[idx] = (seq % num_rounds) + 1
+    assignments: list[list[int]] = []
+
+    for ci, card in enumerate(cards):
+        murder_idxs, other_idxs = per_card[ci]
+        rounds: list[int] = [0] * len(card.clues)
+
+        # Round 1: exactly 1 clue
+        if ci == murder_r1_card:
+            # This card shows a murder clue in round 1
+            r1_idx = rng.choice(murder_idxs)
+            murder_idxs = [i for i in murder_idxs if i != r1_idx]
+        else:
+            # This card shows a non-murder clue in round 1
+            rng.shuffle(other_idxs)
+            r1_idx = other_idxs.pop(0) if other_idxs else murder_idxs.pop(0)
+
+        rounds[r1_idx] = 1
+
+        # Remaining clues: randomly assign to rounds 2 and 3
+        remaining = murder_idxs + other_idxs
+        rng.shuffle(remaining)
+        for idx in remaining:
+            rounds[idx] = rng.choice([2, 3])
 
         assignments.append(rounds)
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { WSEvent } from "@shared/types/game";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
@@ -26,6 +26,7 @@ export default function DashboardPage() {
   } = useWWActions();
 
   const [introText, setIntroText] = useState<string | null>(null);
+  const sendAckRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (state.playerId || !code) return;
@@ -66,7 +67,18 @@ export default function DashboardPage() {
       });
     }
     if (event.event === "intro_narration") {
-      setIntroText(event.data.text as string);
+      if (event.data.clear_overlay) {
+        setIntroText(null);
+      } else {
+        setIntroText(event.data.text as string);
+      }
+      const sound = event.data.sound as string | undefined;
+      if (sound) {
+        const audio = new Audio(`/werewolf/audio/${sound}`);
+        audio.onended = () => sendAckRef.current();
+        audio.onerror = () => sendAckRef.current();
+        audio.play().catch(() => sendAckRef.current());
+      }
     }
     if (event.event === "phase_changed") {
       setIntroText(null);
@@ -80,6 +92,7 @@ export default function DashboardPage() {
       );
     }
     if (event.event === "death_announcement" || event.event === "vote_result") {
+      setIntroText(null);
       const players = event.data.players as WWPrivateState["players"] | undefined;
       if (players) setPlayers(players);
       const deaths = event.data.deaths as string[] | undefined;
@@ -98,7 +111,14 @@ export default function DashboardPage() {
   }, [addPlayer, code, navigate, setLastDeaths, setPhase, setPhaseDetail, setPlayers, setWinner, state.dayNumber, state.nightNumber]);
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
-  useWebSocket(wsUrl, handleWSEvent);
+  const wsRef = useWebSocket(wsUrl, handleWSEvent);
+
+  sendAckRef.current = () => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "narration_ack" }));
+    }
+  };
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -114,9 +134,11 @@ export default function DashboardPage() {
           <p className="text-xs uppercase tracking-wider text-mystery-400">Host Dashboard</p>
           <h2 className="text-2xl text-mystery-100 font-semibold">Room {code}</h2>
           <GameNarration nightSubPhase={state.nightSubPhase} daySubPhase={state.daySubPhase} />
-          <div className="mt-2">
-            <CountdownBar endsAt={state.phaseEndsAt} fallbackSeconds={30} />
-          </div>
+          {(state.nightSubPhase || state.daySubPhase) && (
+            <div className="mt-2">
+              <CountdownBar endsAt={state.phaseEndsAt} fallbackSeconds={30} />
+            </div>
+          )}
         </div>
 
         <div className="bg-mystery-800 rounded-2xl p-4 border border-mystery-700">

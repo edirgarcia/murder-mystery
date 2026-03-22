@@ -59,6 +59,7 @@ class WerewolfRoom(BaseGameRoom):
     night_action_complete: asyncio.Event | None = None
     day_vote_complete: asyncio.Event | None = None
     hunter_action_complete: asyncio.Event | None = None
+    narration_ack: asyncio.Event | None = None
     game_task: asyncio.Task | None = None
 
 

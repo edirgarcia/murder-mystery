@@ -545,21 +545,53 @@ async def get_player_state(code: str, x_player_id: str = Header(...)) -> dict:
     return state
 
 
+async def _narrate(
+    room: WerewolfRoom, text: str, sound: str, *, clear_overlay: bool = False,
+) -> None:
+    """Broadcast a narration line and wait for dashboard audio to finish."""
+    room.narration_ack = asyncio.Event()
+    payload: dict = {"text": text, "sound": sound}
+    if clear_overlay:
+        payload["clear_overlay"] = True
+    await broadcast(room, "intro_narration", payload)
+    try:
+        await asyncio.wait_for(room.narration_ack.wait(), timeout=15)
+    except asyncio.TimeoutError:
+        pass
+    room.narration_ack = None
+
+
 async def _run_game(room: WerewolfRoom) -> None:
     try:
         # --- Intro sequence ---
-        narration = [
-            ("The village settles in for the night...", 3),
-            ("But not everyone here is who they seem.", 3),
-            ("Among you, werewolves lurk in the shadows.", 3),
-            ("First night begins in...", 1),
-            ("3", 1),
-            ("2", 1),
-            ("1", 1),
+        # Each entry: (text, sound_file)
+        # Backend waits for dashboard ack after each step (15s timeout).
+        narration: list[tuple[str, str]] = [
+            ("Welcome everyone to Lobo...", "welcome.mp3"),
+            ("In this game, some of you are villagers...", "villagers.mp3"),
+            ("But not everyone here is who they seem...", "not-who-they-seem.mp3"),
+            ("Some of you are secretly... werewolves...", "werewolves.mp3"),
+            ("Each night, the werewolves will choose someone to eliminate.", "night-eliminate.mp3"),
+            ("Each day, the village will discuss and vote to eliminate someone they suspect.", "day-vote.mp3"),
+            ("The goal of the villagers is to eliminate all the werewolves.", "goal-villagers.mp3"),
+            ("The goal of the werewolves is to outnumber the villagers.", "goal-werewolves.mp3"),
+            ("I will be your narrator.", "narrator.mp3"),
+            ("Please follow my instructions carefully, and remember no talking during the night phases.", "instructions.mp3"),
         ]
-        for text, delay in narration:
-            await broadcast(room, "intro_narration", {"text": text})
-            await asyncio.sleep(delay)
+        for text, sound in narration:
+            await _narrate(room, text, sound)
+
+        # --- Role reveal (overlay clears so players can see their role card) ---
+        await _narrate(room, "Look at your phone now... to discover your secret role.", "role-reveal.mp3", clear_overlay=True)
+        await _narrate(room, "Remember your role. Do not reveal it to anyone.", "role-remember.mp3")
+
+        # --- Resume intro: close eyes ---
+        await _narrate(room, "The village settles in for the night...", "settle.mp3")
+        await _narrate(room, "Every player must now close their eyes...", "close-eyes.mp3")
+        await _narrate(room, " ... Close your eyes now. First night begins in... 3... 2... 1...", "countdown.mp3")
+
+        # --- Phase narration: Cupid ---
+        await _narrate(room, "Cupid... open your eyes. Choose two players to link as lovers.", "phase-cupid.mp3")
 
         # Night 0: Cupid
         room.night_sub_phase = NightSubPhase.CUPID
@@ -601,6 +633,10 @@ async def _run_game(room: WerewolfRoom) -> None:
             room.last_deaths = []
             room.last_death_causes = {}
 
+            # --- Phase narration: Night falls + Werewolves ---
+            await _narrate(room, "Night falls over the village... Everyone, close your eyes.", "phase-night-falls.mp3")
+            await _narrate(room, "Werewolves... open your eyes. Choose your victim.", "phase-werewolves.mp3")
+
             # Werewolves
             room.night_sub_phase = NightSubPhase.WEREWOLVES
             room.werewolf_votes = {}
@@ -634,6 +670,9 @@ async def _run_game(room: WerewolfRoom) -> None:
                 pass
             room.werewolf_victim = resolve_werewolf_vote(room.werewolf_votes, room.alpha_wolf_id)
 
+            # --- Phase narration: Seer ---
+            await _narrate(room, "Werewolves, close your eyes... Seer, open your eyes.", "phase-seer.mp3")
+
             # Seer
             room.night_sub_phase = NightSubPhase.SEER
             room.seer_target = None
@@ -661,6 +700,9 @@ async def _run_game(room: WerewolfRoom) -> None:
                     await asyncio.wait_for(room.night_action_complete.wait(), timeout=SEER_SECONDS)
                 except asyncio.TimeoutError:
                     pass
+
+            # --- Phase narration: Witch ---
+            await _narrate(room, "Seer, close your eyes... Witch, open your eyes.", "phase-witch.mp3")
 
             # Witch
             room.night_sub_phase = NightSubPhase.WITCH
@@ -709,6 +751,9 @@ async def _run_game(room: WerewolfRoom) -> None:
             room.last_deaths = deaths
             room.last_death_causes = causes
 
+            # --- Phase narration: Dawn ---
+            await _narrate(room, "Witch, close your eyes... Dawn breaks over the village.", "phase-dawn.mp3")
+
             room.night_sub_phase = None
             room.day_sub_phase = DaySubPhase.ANNOUNCEMENT
             _set_phase_end(room, ANNOUNCEMENT_SECONDS)
@@ -724,6 +769,9 @@ async def _run_game(room: WerewolfRoom) -> None:
                 return
             await asyncio.sleep(ANNOUNCEMENT_SECONDS)
 
+            # --- Phase narration: Discussion ---
+            await _narrate(room, "Villagers, discuss amongst yourselves. Who among you is a werewolf?", "phase-discussion.mp3")
+
             # Day discussion
             room.day_number += 1
             room.day_sub_phase = DaySubPhase.DISCUSSION
@@ -736,6 +784,9 @@ async def _run_game(room: WerewolfRoom) -> None:
                 "players": _public_players(room),
             })
             await asyncio.sleep(room.discussion_seconds)
+
+            # --- Phase narration: Voting ---
+            await _narrate(room, "The discussion is over. It is time to vote.", "phase-voting.mp3")
 
             # Day voting
             room.day_sub_phase = DaySubPhase.VOTING

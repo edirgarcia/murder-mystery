@@ -51,6 +51,10 @@ def create_ws_router(store: GameStore, prefix: str) -> APIRouter:
                 msg = json.loads(data)
                 if msg.get("type") == "ping":
                     await websocket.send_text(json.dumps({"event": "pong"}))
+                elif msg.get("type") == "narration_ack":
+                    ack = getattr(room, "narration_ack", None)
+                    if ack is not None:
+                        ack.set()
         except WebSocketDisconnect:
             logger.info("%s disconnected from room %s", client_name, code)
         finally:
