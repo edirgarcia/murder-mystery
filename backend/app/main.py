@@ -6,9 +6,9 @@ import os
 import re
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .shared.config import CORS_ORIGINS
@@ -35,17 +35,27 @@ app = FastAPI(title="Party Games Platform", version="0.2.0")
 
 # In production, the frontend sends requests like /murder-mystery/api/mm/games/...
 # (Vite dev proxy strips the game prefix; this middleware does the same in prod.)
+# Must be a raw ASGI middleware so it applies to both HTTP and WebSocket connections.
 _GAME_PREFIX_RE = re.compile(
     r"^/(murder-mystery|funny-questions|werewolf|prisoners-dilemma)(/api/.*)"
 )
 
 
-@app.middleware("http")
-async def strip_game_prefix(request: Request, call_next: ...) -> Response:
-    m = _GAME_PREFIX_RE.match(request.scope["path"])
-    if m:
-        request.scope["path"] = m.group(2)
-    return await call_next(request)
+class StripGamePrefixMiddleware:
+    """Strip game path prefix for both HTTP and WebSocket requests."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            m = _GAME_PREFIX_RE.match(scope["path"])
+            if m:
+                scope["path"] = m.group(2)
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(StripGamePrefixMiddleware)
 
 
 app.add_middleware(
