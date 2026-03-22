@@ -1,20 +1,16 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, useGameActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getGameInfo, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
 import PlayerList from "@shared/components/PlayerList";
-import IntroSequence from "../components/IntroSequence";
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
   const { setGame, setPlayers, addPlayer, setPhase, setError, setRoundInfo } = useGameActions();
-  const [showIntro, setShowIntro] = useState(false);
-  const [introPlayerNames, setIntroPlayerNames] = useState<string[]>([]);
-  const [introWeapon, setIntroWeapon] = useState<string | null>(null);
 
   // Restore game state from localStorage (handles page refresh / HMR)
   useEffect(() => {
@@ -64,13 +60,14 @@ export default function LobbyPage() {
           break;
         case "game_started":
           setPhase("playing");
-          if (event.data.murder_weapon && event.data.player_names) {
-            setIntroWeapon(event.data.murder_weapon as string);
-            setIntroPlayerNames(event.data.player_names as string[]);
-            setShowIntro(true);
-          } else {
-            navigate(`/game/${code}`);
-          }
+          break;
+        case "round_started":
+          setRoundInfo(
+            event.data.round as number,
+            event.data.started_at as string,
+            event.data.duration_seconds as number,
+          );
+          navigate(`/game/${code}`);
           break;
         case "generation_failed":
           setPhase("lobby");
@@ -83,16 +80,6 @@ export default function LobbyPage() {
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
   useWebSocket(wsUrl, handleWSEvent);
-
-  if (showIntro && introWeapon && introPlayerNames.length > 0) {
-    return (
-      <IntroSequence
-        playerNames={introPlayerNames}
-        murderWeapon={introWeapon}
-        onComplete={() => navigate(`/game/${code}`)}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -129,6 +116,12 @@ export default function LobbyPage() {
         {state.phase === "generating" && (
           <p className="text-center text-mystery-300 animate-pulse">
             Generating puzzle...
+          </p>
+        )}
+
+        {state.phase === "playing" && (
+          <p className="text-center text-mystery-300 animate-pulse">
+            The game is starting...
           </p>
         )}
 

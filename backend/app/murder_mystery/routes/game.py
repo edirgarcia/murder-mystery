@@ -68,6 +68,51 @@ def _build_leaderboard(room) -> list[LeaderboardEntry]:
     return entries
 
 
+async def _mm_narrate(room, text: str, sound: str) -> None:
+    """Broadcast a narration line and wait for dashboard audio to finish."""
+    room.narration_ack = asyncio.Event()
+    await broadcast(room, "intro_narration", {"text": text, "sound": sound})
+    try:
+        await asyncio.wait_for(room.narration_ack.wait(), timeout=15)
+    except asyncio.TimeoutError:
+        pass
+    room.narration_ack = None
+
+
+async def _run_mm_intro(room) -> None:
+    """Run intro narration, then auto-start round 1."""
+    try:
+        guest_names = ", ".join(p.name for p in room.players)
+        narration = [
+            ("A Murder Mystery", "mm-intro.mp3"),
+            (f"Tonight's guests: {guest_names}", "mm-guests.mp3"),
+            ("gathered for an evening of intrigue...", "mm-intrigue.mp3"),
+            ("But one among them harbors a deadly secret.", "mm-secret.mp3"),
+            ("Someone here is a killer.", "mm-killer.mp3"),
+            (f"The weapon: {room.murder_weapon}", "mm-weapon.mp3"),
+            ("Examine your clues. Find the truth.", "mm-examine.mp3"),
+        ]
+        for text, sound in narration:
+            await _mm_narrate(room, text, sound)
+
+        # Auto-start round 1
+        now = datetime.now(timezone.utc)
+        room.started_at = now
+        room.current_round = 1
+        room.round_started_at = now
+        room.timer_task = asyncio.create_task(_round_expire(room, 1))
+        await broadcast(room, "round_started", {
+            "round": 1,
+            "started_at": now.isoformat(),
+            "duration_seconds": room.round_durations[0],
+            "total_rounds": 3,
+        })
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        logger.exception("MM intro crashed for room %s", room.code)
+
+
 async def _finish_game(room) -> None:
     """End the game: set phase, cancel timer, broadcast leaderboard."""
     room.phase = GamePhase.FINISHED
@@ -88,6 +133,15 @@ async def _finish_game(room) -> None:
 
 async def _advance_round(room) -> None:
     """Advance to the next round, start its timer, and broadcast."""
+    next_round = room.current_round + 1
+    round_narration = {
+        2: ("Round 2. New clues available. You may now make your accusation.", "mm-round-2.mp3"),
+        3: ("Final round. This is your last chance to find the killer.", "mm-round-3.mp3"),
+    }
+    entry = round_narration.get(next_round)
+    if entry:
+        await _mm_narrate(room, entry[0], entry[1])
+
     room.current_round += 1
     room.round_started_at = datetime.now(timezone.utc)
     room.timer_task = asyncio.create_task(_round_expire(room, room.current_round))
@@ -186,6 +240,8 @@ async def start_game(
         "murder_weapon": room.murder_weapon,
         "player_names": [p.name for p in room.players],
     })
+
+    room.intro_task = asyncio.create_task(_run_mm_intro(room))
     return {"status": "started"}
 
 

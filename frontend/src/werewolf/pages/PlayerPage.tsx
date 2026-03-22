@@ -48,7 +48,6 @@ export default function PlayerPage() {
   const [selected, setSelected] = useState("");
   const [selected2, setSelected2] = useState("");
   const [loading, setLoading] = useState(false);
-  const [introText, setIntroText] = useState<string | null>(null);
   const preselectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleWolfPreselect = useCallback(
@@ -154,15 +153,7 @@ export default function PlayerPage() {
           );
         }
       }
-      if (event.event === "intro_narration") {
-        if (event.data.clear_overlay) {
-          setIntroText(null);
-        } else {
-          setIntroText(event.data.text as string);
-        }
-      }
       if (event.event === "phase_changed") {
-        setIntroText(null);
         setPhase("playing");
         clearWitchPrompt();
         setPhaseDetail(
@@ -194,7 +185,6 @@ export default function PlayerPage() {
         );
       }
       if (event.event === "death_announcement" || event.event === "vote_result") {
-        setIntroText(null);
         const players = event.data.players as WWPrivateState["players"] | undefined;
         if (players) setPlayers(players);
         const deaths = event.data.deaths as string[] | undefined;
@@ -296,13 +286,6 @@ export default function PlayerPage() {
 
   return (
     <div className="min-h-screen px-4 py-6">
-      {introText !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-          <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
-            {introText}
-          </p>
-        </div>
-      )}
       <div className="max-w-lg mx-auto space-y-4">
         <RoleCard role={state.role} alive={state.alive} isAlpha={state.role === "werewolf" && state.playerId === state.alphaWolfId} />
 

@@ -35,6 +35,9 @@ class MurderRoom(BaseGameRoom):
     clue_round_assignments: list[list[int]] | None = None
     # Player guesses: {player_id: GuessRecord}
     guesses: dict[str, GuessRecord] = field(default_factory=dict)
+    # Narration
+    narration_ack: asyncio.Event | None = None
+    intro_task: asyncio.Task | None = None
 
 
 class MurderStore(GameStore[MurderRoom]):

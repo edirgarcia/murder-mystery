@@ -3,11 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useGame, useGameActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
-import { getGameInfo, startGame, beginGame, advanceRound, endGame, getResults, buildWsUrl } from "../api/http";
+import { getGameInfo, startGame, advanceRound, endGame, getResults, buildWsUrl } from "../api/http";
 import type { Difficulty, LeaderboardEntry, ClueInfo } from "../types/game";
 import type { WSEvent } from "@shared/types/game";
 import PlayerList from "@shared/components/PlayerList";
-import IntroSequence from "../components/IntroSequence";
 
 function CountdownTimer({ startedAt, durationSeconds }: { startedAt: string; durationSeconds: number }) {
   const [remaining, setRemaining] = useState(durationSeconds);
@@ -52,8 +51,8 @@ export default function DashboardPage() {
   const [currentRound, setCurrentRound] = useState(0);
   const [roundStartedAt, setRoundStartedAt] = useState<string | null>(null);
   const [roundDurationSeconds, setRoundDurationSeconds] = useState<number | null>(null);
-  const [showIntro, setShowIntro] = useState(false);
-  const [introPlayerNames, setIntroPlayerNames] = useState<string[]>([]);
+  const [narrationText, setNarrationText] = useState<string | null>(null);
+  const sendAckRef = useRef<() => void>(() => {});
   const loadedRef = useRef(false);
 
   // Restore game state from localStorage (handles page refresh / HMR)
@@ -114,12 +113,20 @@ export default function DashboardPage() {
             setMurderWeapon(event.data.murder_weapon as string);
             setMurderWeaponLocal(event.data.murder_weapon as string);
           }
-          if (event.data.player_names) {
-            setIntroPlayerNames(event.data.player_names as string[]);
-          }
-          setShowIntro(true);
           break;
+        case "intro_narration": {
+          setNarrationText(event.data.text as string);
+          const sound = event.data.sound as string | undefined;
+          if (sound) {
+            const audio = new Audio(`/murder-mystery/audio/${sound}`);
+            audio.onended = () => sendAckRef.current();
+            audio.onerror = () => sendAckRef.current();
+            audio.play().catch(() => sendAckRef.current());
+          }
+          break;
+        }
         case "round_started":
+          setNarrationText(null);
           setCurrentRound(event.data.round as number);
           setRoundStartedAt(event.data.started_at as string);
           setRoundDurationSeconds(event.data.duration_seconds as number);
@@ -130,6 +137,7 @@ export default function DashboardPage() {
           );
           break;
         case "round_advanced":
+          setNarrationText(null);
           setCurrentRound(event.data.round as number);
           setRoundStartedAt(event.data.started_at as string);
           setRoundDurationSeconds(event.data.duration_seconds as number);
@@ -167,7 +175,14 @@ export default function DashboardPage() {
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
-  useWebSocket(wsUrl, handleWSEvent);
+  const wsRef = useWebSocket(wsUrl, handleWSEvent);
+
+  sendAckRef.current = () => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "narration_ack" }));
+    }
+  };
 
   async function handleStart() {
     if (!code || !state.playerId) return;
@@ -200,22 +215,6 @@ export default function DashboardPage() {
 
   const canStart = state.players.length >= 4 && !starting;
   const phase = state.phase ?? "lobby";
-
-  // --- INTRO SEQUENCE ---
-  if (showIntro && murderWeaponLocal && introPlayerNames.length > 0) {
-    return (
-      <IntroSequence
-        playerNames={introPlayerNames}
-        murderWeapon={murderWeaponLocal}
-        onComplete={() => {
-          setShowIntro(false);
-          if (code && state.playerId) {
-            beginGame(code, state.playerId).catch(() => {});
-          }
-        }}
-      />
-    );
-  }
 
   // --- LOBBY PHASE ---
   if (phase === "lobby" || phase === "generating") {
@@ -320,6 +319,13 @@ export default function DashboardPage() {
   if (phase === "playing") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
+        {narrationText !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+            <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
+              {narrationText}
+            </p>
+          </div>
+        )}
         <div className="w-full max-w-lg space-y-8">
           {murderWeaponLocal && (
             <div className="text-center">
