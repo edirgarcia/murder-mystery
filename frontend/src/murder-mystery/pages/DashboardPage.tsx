@@ -230,7 +230,7 @@ export default function DashboardPage() {
             </h2>
             <div className="mt-4 inline-block rounded-xl bg-white p-3">
               <QRCodeSVG
-                value={`http://localhost:5173/?join=${code}`}
+                value={`${window.location.origin}/murder-mystery/?join=${code}`}
                 size={180}
               />
             </div>

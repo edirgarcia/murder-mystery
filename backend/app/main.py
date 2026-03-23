@@ -117,6 +117,12 @@ if STATIC_DIR.is_dir():
     async def root_index():
         return FileResponse(STATIC_DIR / "index.html")
 
+    # Serve game-specific audio files before SPA catch-all
+    for _game in _SPA_GAMES:
+        _audio_dir = STATIC_DIR / _game / "audio"
+        if _audio_dir.is_dir():
+            app.mount(f"/{_game}/audio", StaticFiles(directory=_audio_dir), name=f"{_game}-audio")
+
     for _game, _html in _SPA_GAMES.items():
 
         def _make_handler(html_file: str):
