@@ -7,15 +7,32 @@ import CountdownBar from "../components/CountdownBar";
 import type { WSEvent } from "@shared/types/game";
 import type { AccusationResult, Decision, PDPlayerInfo, PDPrivateState, RoundResult, TeamColor } from "../types/game";
 
-function teamStyles(team: TeamColor) {
-  return team === "red"
-    ? "border-red-400/30 bg-red-500/10 text-red-100"
-    : "border-blue-400/30 bg-blue-500/10 text-blue-100";
-}
-
 function teamLabel(team: TeamColor) {
   return team === "red" ? "Red Team" : "Blue Team";
 }
+
+const themes = {
+  red: {
+    page: "bg-gradient-to-b from-red-950/40 to-mystery-950",
+    section: "border-red-400/25 bg-red-950/30",
+    badge: "border-red-400/30 bg-red-500/15 text-red-100",
+    inner: "bg-red-950/40",
+    btnPrimary: "bg-red-600 hover:bg-red-500 disabled:opacity-40",
+    btnSelected: "border-red-300 bg-red-500/20",
+    confirmed: "border-red-400/20 bg-red-500/10 text-red-100",
+    accent: "text-red-300",
+  },
+  blue: {
+    page: "bg-gradient-to-b from-blue-950/40 to-mystery-950",
+    section: "border-blue-400/25 bg-blue-950/30",
+    badge: "border-blue-400/30 bg-blue-500/15 text-blue-100",
+    inner: "bg-blue-950/40",
+    btnPrimary: "bg-blue-600 hover:bg-blue-500 disabled:opacity-40",
+    btnSelected: "border-blue-300 bg-blue-500/20",
+    confirmed: "border-blue-400/20 bg-blue-500/10 text-blue-100",
+    accent: "text-blue-300",
+  },
+} as const;
 
 export default function PlayerPage() {
   const { code } = useParams<{ code: string }>();
@@ -37,13 +54,14 @@ export default function PlayerPage() {
     setTeamScores,
     setVoted,
     setWinner,
+    syncGameInfo,
   } = usePDActions();
 
-  const [choice, setChoice] = useState<Decision | null>(null);
   const [sabotage, setSabotage] = useState(false);
   const [accuseTarget, setAccuseTarget] = useState<string | null>(null);
   const [submittingVote, setSubmittingVote] = useState(false);
   const [submittingAccusation, setSubmittingAccusation] = useState(false);
+  const [roleRevealed, setRoleRevealed] = useState(false);
 
   useEffect(() => {
     if (state.playerId || !code) return;
@@ -58,14 +76,12 @@ export default function PlayerPage() {
   useEffect(() => {
     if (!code) return;
     getGameInfo(code).then((info) => {
-      setPhase(info.phase);
-      setPlayers(info.players);
-      setTeamScores(info.team_scores);
+      syncGameInfo(info);
       if (info.phase === "finished") {
         navigate(`/result/${code}`, { replace: true });
       }
     });
-  }, [code, navigate, setPhase, setPlayers, setTeamScores]);
+  }, [code, navigate, syncGameInfo]);
 
   useEffect(() => {
     if (!code || !state.playerId || state.isHost) return;
@@ -102,9 +118,10 @@ export default function PlayerPage() {
           break;
         case "round_started":
           clearError();
-          setChoice(null);
           setSabotage(false);
           setAccuseTarget(null);
+          setSubmittingVote(false);
+          setSubmittingAccusation(false);
           roundStarted(
             event.data.round as number,
             event.data.total_rounds as number,
@@ -159,18 +176,6 @@ export default function PlayerPage() {
     [state.playerId, state.players, state.privateState?.team]
   );
 
-  async function handleVoteSubmit() {
-    if (!code || !state.playerId || !choice) return;
-    setSubmittingVote(true);
-    try {
-      await submitVote(code, state.playerId, choice, sabotage);
-      setVoted();
-    } catch (err: any) {
-      setError(err.message);
-      setSubmittingVote(false);
-    }
-  }
-
   async function handleAccusationSubmit() {
     if (!code || !state.playerId) return;
     setSubmittingAccusation(true);
@@ -194,53 +199,72 @@ export default function PlayerPage() {
   }
 
   const team = state.privateState.team;
+  // Spies display the opposite team color so onlookers can't identify them
+  const displayTeam: TeamColor = state.privateState.is_spy
+    ? (team === "red" ? "blue" : "red")
+    : team;
+  const t = themes[displayTeam];
   const roundTeam = state.latestRoundResult?.teams[team];
   const accusationTeam = state.latestAccusationResult?.teams[team];
 
   return (
-    <div className="min-h-screen px-4 py-6">
+    <div className={`min-h-screen px-4 py-6 ${t.page}`}>
       <div className="mx-auto max-w-md space-y-4">
-        <section className="rounded-[28px] border border-white/10 bg-mystery-800/80 p-5 shadow-xl">
+        <section className={`rounded-[28px] border p-5 shadow-xl ${t.section}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-mystery-300">Round</p>
-              <h1 className="mt-1 text-3xl font-bold text-white">
-                {state.currentRound || 1} / {state.totalRounds}
+              <h1 className="text-3xl font-bold text-white">
+                {state.privateState.player_name}
               </h1>
+              <p className={`mt-1 text-sm ${t.accent}`}>
+                Round {state.currentRound || 1} / {state.totalRounds}
+              </p>
             </div>
-            <div className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${teamStyles(team)}`}>
-              {teamLabel(team)}
+            <div className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${t.badge}`}>
+              {teamLabel(displayTeam)}
             </div>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-mystery-900/70 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-mystery-400">Role</p>
-              <p className="mt-2 text-lg font-semibold text-white">
-                {state.privateState.is_spy ? "Spy" : "Operative"}
-              </p>
-              <p className="mt-1 text-sm text-mystery-200">
-                {state.privateState.is_spy
-                  ? state.privateState.spy_active
-                    ? "You can sabotage up to three rounds."
-                    : "You were exposed and can no longer sabotage."
-                  : "Vote with your team and help identify your spy."}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-mystery-900/70 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-mystery-400">Team Score</p>
-              <p className="mt-2 text-lg font-semibold text-white">{state.teamScores[team]}</p>
-              <p className="mt-1 text-sm text-mystery-200">
-                {state.privateState.is_spy ? `${state.privateState.sabotage_charges} sabotage charges left` : "Stay aligned if you want trust to stick."}
-              </p>
-            </div>
-          </div>
+
+          <button
+            onClick={() => setRoleRevealed((prev) => !prev)}
+            className={`mt-4 w-full rounded-2xl border border-white/10 p-4 text-left transition hover:brightness-125 ${t.inner}`}
+          >
+            {roleRevealed ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-mystery-400">Secret Role</p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    {state.privateState.is_spy ? "Spy" : "Operative"}
+                  </p>
+                  <p className="mt-1 text-sm text-mystery-200">
+                    {state.privateState.is_spy
+                      ? state.privateState.spy_active
+                        ? `Your screen shows ${teamLabel(displayTeam)}, but you're actually ${teamLabel(team)}.`
+                        : "You were exposed and can no longer sabotage."
+                      : "Vote with your team and help identify your spy."}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-mystery-400">Team Score</p>
+                  <p className="mt-2 text-lg font-semibold text-white">{state.teamScores[team]}</p>
+                  <p className="mt-1 text-sm text-mystery-200">
+                    {state.privateState.is_spy ? `${state.privateState.sabotage_charges} sabotage charges left` : "Stay aligned if you want trust to stick."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 py-3 text-mystery-300">
+                <span className="text-sm uppercase tracking-[0.25em]">Tap to reveal your role</span>
+              </div>
+            )}
+          </button>
         </section>
 
         {state.roundPhase === "voting" && (
-          <section className="rounded-[28px] border border-white/10 bg-mystery-800/80 p-5 shadow-xl">
+          <section className={`rounded-[28px] border p-5 shadow-xl ${t.section}`}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-mystery-300">Private Vote</p>
+                <p className={`text-sm uppercase tracking-[0.25em] ${t.accent}`}>Private Vote</p>
                 <h2 className="mt-1 text-2xl font-semibold text-white">Trust or Betray</h2>
                 <p className="mt-2 text-sm text-mystery-200">
                   Discuss in person, then lock your personal vote here. Ties resolve to
@@ -257,34 +281,11 @@ export default function PlayerPage() {
               )}
 
               {state.hasVoted ? (
-                <div className="rounded-2xl border border-green-400/20 bg-green-500/10 p-4 text-center text-green-100">
+                <div className={`rounded-2xl border p-4 text-center ${t.confirmed}`}>
                   Vote locked in. Wait for the round reveal.
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(["trust", "betray"] as Decision[]).map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => setChoice(value)}
-                        className={`rounded-2xl border px-4 py-5 text-left transition ${
-                          choice === value
-                            ? value === "trust"
-                              ? "border-blue-300 bg-blue-500/20"
-                              : "border-red-300 bg-red-500/20"
-                            : "border-white/10 bg-mystery-900/60 hover:bg-mystery-700/80"
-                        }`}
-                      >
-                        <p className="text-xs uppercase tracking-[0.25em] text-mystery-300">
-                          {value}
-                        </p>
-                        <p className="mt-2 text-lg font-semibold text-white">
-                          {value === "trust" ? "Hold the line" : "Play defense"}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-
                   {state.privateState.is_spy && state.privateState.spy_active && state.privateState.sabotage_charges > 0 && (
                     <label className="flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
                       <input
@@ -294,19 +295,39 @@ export default function PlayerPage() {
                         className="mt-1"
                       />
                       <span>
-                        Spend one sabotage charge to flip your team&apos;s final decision.
-                        The round will be marked as tampered on the dashboard.
+                        Sabotage this vote to flip its outcome.
                       </span>
                     </label>
                   )}
 
-                  <button
-                    onClick={handleVoteSubmit}
-                    disabled={!choice || submittingVote}
-                    className="w-full rounded-2xl bg-mystery-500 px-5 py-4 text-lg font-semibold text-white transition hover:bg-mystery-400 disabled:opacity-40"
-                  >
-                    {submittingVote ? "Submitting..." : "Lock Vote"}
-                  </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(["trust", "betray"] as Decision[]).map((value) => (
+                      <button
+                        key={value}
+                        disabled={submittingVote}
+                        onClick={() => {
+                          if (!code || !state.playerId) return;
+                          setSubmittingVote(true);
+                          submitVote(code, state.playerId, value, sabotage)
+                            .then(() => setVoted())
+                            .catch((err: any) => {
+                              setError(err.message);
+                              setSubmittingVote(false);
+                            });
+                        }}
+                        className={`rounded-2xl border px-4 py-5 text-left transition disabled:opacity-40 ${
+                          `border-white/10 ${t.inner} hover:brightness-125`
+                        }`}
+                      >
+                        <p className="text-2xl font-bold uppercase tracking-[0.15em] text-white">
+                          {value}
+                        </p>
+                        <p className={`mt-1 text-sm ${t.accent}`}>
+                          {value === "trust" ? "Play nice" : "Play dirty"}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
                 </>
               )}
             </div>
@@ -314,10 +335,10 @@ export default function PlayerPage() {
         )}
 
         {state.roundPhase === "accusation" && (
-          <section className="rounded-[28px] border border-white/10 bg-mystery-800/80 p-5 shadow-xl">
+          <section className={`rounded-[28px] border p-5 shadow-xl ${t.section}`}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-mystery-300">Accusation</p>
+                <p className={`text-sm uppercase tracking-[0.25em] ${t.accent}`}>Accusation</p>
                 <h2 className="mt-1 text-2xl font-semibold text-white">Do you call out a spy?</h2>
                 <p className="mt-2 text-sm text-mystery-200">
                   Majority yes is required. Wrong accusations cost your team 1 point.
@@ -333,7 +354,7 @@ export default function PlayerPage() {
               )}
 
               {state.hasAccused ? (
-                <div className="rounded-2xl border border-green-400/20 bg-green-500/10 p-4 text-center text-green-100">
+                <div className={`rounded-2xl border p-4 text-center ${t.confirmed}`}>
                   Accusation submitted. Wait for the team result.
                 </div>
               ) : (
@@ -342,8 +363,8 @@ export default function PlayerPage() {
                     onClick={() => setAccuseTarget(null)}
                     className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                       accuseTarget === null
-                        ? "border-mystery-300 bg-mystery-600/60"
-                        : "border-white/10 bg-mystery-900/60 hover:bg-mystery-700/80"
+                        ? t.btnSelected
+                        : `border-white/10 ${t.inner} hover:brightness-125`
                     }`}
                   >
                     <p className="font-semibold text-white">No accusation</p>
@@ -358,7 +379,7 @@ export default function PlayerPage() {
                         className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                           accuseTarget === player.id
                             ? "border-amber-200 bg-amber-300/10"
-                            : "border-white/10 bg-mystery-900/60 hover:bg-mystery-700/80"
+                            : `border-white/10 ${t.inner} hover:brightness-125`
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -376,7 +397,7 @@ export default function PlayerPage() {
                   <button
                     onClick={handleAccusationSubmit}
                     disabled={submittingAccusation}
-                    className="w-full rounded-2xl bg-red-500 px-5 py-4 text-lg font-semibold text-white transition hover:bg-red-400 disabled:opacity-40"
+                    className={`w-full rounded-2xl px-5 py-4 text-lg font-semibold text-white transition ${t.btnPrimary}`}
                   >
                     {submittingAccusation ? "Submitting..." : "Submit Accusation Vote"}
                   </button>
@@ -387,15 +408,15 @@ export default function PlayerPage() {
         )}
 
         {state.roundPhase === "reveal" && (
-          <section className="rounded-[28px] border border-white/10 bg-mystery-800/80 p-5 shadow-xl">
+          <section className={`rounded-[28px] border p-5 shadow-xl ${t.section}`}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-mystery-300">Reveal</p>
+                <p className={`text-sm uppercase tracking-[0.25em] ${t.accent}`}>Reveal</p>
                 <h2 className="mt-1 text-2xl font-semibold text-white">Look up at the host screen</h2>
               </div>
 
               {roundTeam && (
-                <div className="rounded-2xl bg-mystery-900/70 p-4">
+                <div className={`rounded-2xl p-4 ${t.inner}`}>
                   <div className="flex items-center justify-between">
                     <p className="font-semibold text-white">Your team played {roundTeam.final_choice}</p>
                     {roundTeam.tampered && (
@@ -414,7 +435,7 @@ export default function PlayerPage() {
               )}
 
               {accusationTeam && accusationTeam.accusation_triggered && (
-                <div className="rounded-2xl bg-mystery-900/70 p-4">
+                <div className={`rounded-2xl p-4 ${t.inner}`}>
                   <p className="font-semibold text-white">
                     {accusationTeam.correct
                       ? `${accusationTeam.accused_player_name} was the spy.`
@@ -429,7 +450,7 @@ export default function PlayerPage() {
               )}
 
               {accusationTeam && !accusationTeam.accusation_triggered && (
-                <div className="rounded-2xl bg-mystery-900/70 p-4 text-sm text-mystery-200">
+                <div className={`rounded-2xl p-4 text-sm text-mystery-200 ${t.inner}`}>
                   No accusation landed for your team this round.
                 </div>
               )}

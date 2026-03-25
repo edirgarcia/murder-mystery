@@ -77,20 +77,20 @@ def test_start_assigns_two_teams_and_one_spy_each() -> None:
 
 def test_score_choices_matches_expected_matrix() -> None:
     assert score_choices(Decision.TRUST, Decision.TRUST) == {
-        TeamColor.RED: 6,
-        TeamColor.BLUE: 6,
+        TeamColor.RED: 3,
+        TeamColor.BLUE: 3,
     }
     assert score_choices(Decision.TRUST, Decision.BETRAY) == {
-        TeamColor.RED: -12,
-        TeamColor.BLUE: 12,
+        TeamColor.RED: -6,
+        TeamColor.BLUE: 6,
     }
     assert score_choices(Decision.BETRAY, Decision.TRUST) == {
-        TeamColor.RED: 12,
-        TeamColor.BLUE: -12,
+        TeamColor.RED: 6,
+        TeamColor.BLUE: -6,
     }
     assert score_choices(Decision.BETRAY, Decision.BETRAY) == {
-        TeamColor.RED: -6,
-        TeamColor.BLUE: -6,
+        TeamColor.RED: -3,
+        TeamColor.BLUE: -3,
     }
 
 

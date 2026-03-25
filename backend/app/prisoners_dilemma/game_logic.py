@@ -60,22 +60,22 @@ def score_choices(
 ) -> dict[TeamColor, int]:
     if red_choice == Decision.TRUST and blue_choice == Decision.TRUST:
         return {
-            TeamColor.RED: 6 * multiplier,
-            TeamColor.BLUE: 6 * multiplier,
+            TeamColor.RED: 3 * multiplier,
+            TeamColor.BLUE: 3 * multiplier,
         }
     if red_choice == Decision.TRUST and blue_choice == Decision.BETRAY:
         return {
-            TeamColor.RED: -12 * multiplier,
-            TeamColor.BLUE: 12 * multiplier,
+            TeamColor.RED: -6 * multiplier,
+            TeamColor.BLUE: 6 * multiplier,
         }
     if red_choice == Decision.BETRAY and blue_choice == Decision.TRUST:
         return {
-            TeamColor.RED: 12 * multiplier,
-            TeamColor.BLUE: -12 * multiplier,
+            TeamColor.RED: 6 * multiplier,
+            TeamColor.BLUE: -6 * multiplier,
         }
     return {
-        TeamColor.RED: -6 * multiplier,
-        TeamColor.BLUE: -6 * multiplier,
+        TeamColor.RED: -3 * multiplier,
+        TeamColor.BLUE: -3 * multiplier,
     }
 
 
@@ -122,6 +122,8 @@ def resolve_team_accusation(
 def winner_for_scores(team_scores: dict[TeamColor, int]) -> str:
     red_score = team_scores.get(TeamColor.RED, 0)
     blue_score = team_scores.get(TeamColor.BLUE, 0)
+    if red_score <= 0 and blue_score <= 0:
+        return "nobody"
     if red_score > blue_score:
         return TeamColor.RED.value
     if blue_score > red_score:

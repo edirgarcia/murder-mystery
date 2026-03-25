@@ -248,7 +248,7 @@ async def start_game(
         "max_players": MAX_PLAYERS,
     })
 
-    room.game_task = asyncio.create_task(_run_game(room))
+    room.game_task = asyncio.create_task(_run_intro(room))
     return {"status": "started"}
 
 
@@ -349,6 +349,52 @@ async def submit_accusation(
     return {"status": "submitted"}
 
 
+async def _pd_narrate(room: PDRoom, text: str, sound: str) -> None:
+    """Broadcast a narration line and wait for dashboard audio to finish."""
+    room.narration_ack = asyncio.Event()
+    await broadcast(room, "intro_narration", {"text": text, "sound": sound})
+    if room.connections:
+        try:
+            await asyncio.wait_for(room.narration_ack.wait(), timeout=15)
+        except asyncio.TimeoutError:
+            pass
+    room.narration_ack = None
+
+
+async def _run_intro(room: PDRoom) -> None:
+    """Play intro narration, then hand off to the game loop."""
+    try:
+        # Give clients time to navigate and establish WS connections
+        await asyncio.sleep(2)
+        for _ in range(20):
+            if room.connections:
+                break
+            await asyncio.sleep(0.25)
+
+        narration = [
+            ("Welcome to Double Trust.", "pd-welcome.mp3"),
+            ("You'll be split into two teams: Red and Blue.", "pd-teams.mp3"),
+            ("Each round, your team must decide: Trust or Betray.", "pd-decide.mp3"),
+            ("If both teams trust, everyone gains points.", "pd-both-trust.mp3"),
+            ("If both betray, everyone loses.", "pd-both-betray.mp3"),
+            ("But if one team betrays while the other trusts, the betrayers win big.", "pd-one-betrays.mp3"),
+            ("Here's the twist: there's a hidden spy on each team.", "pd-spy.mp3"),
+            ("Spies can sabotage their own team's vote, flipping the outcome.", "pd-sabotage.mp3"),
+            ("After each round, you can accuse a teammate of being the spy.", "pd-accuse.mp3"),
+            ("Check your phone now to see your role.", "pd-check-role.mp3"),
+            ("The game begins!", "pd-begin.mp3"),
+        ]
+        for text, sound in narration:
+            await _pd_narrate(room, text, sound)
+
+        await broadcast(room, "intro_done", {})
+        await _run_game(room)
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        logger.exception("PD intro crashed for room %s", room.code)
+
+
 async def _run_game(room: PDRoom) -> None:
     try:
         for round_number in range(1, room.total_rounds + 1):
@@ -384,6 +430,9 @@ async def _run_game(room: PDRoom) -> None:
             room.voting_ends_at = None
             room.round_phase = "reveal"
             round_result = _resolve_round(room)
+            round_result["reveal_ends_at"] = (
+                _utc_now() + timedelta(seconds=REVEAL_SECONDS)
+            ).isoformat()
             await broadcast(room, "round_result", round_result)
 
             room.round_phase = "accusation"
@@ -408,6 +457,9 @@ async def _run_game(room: PDRoom) -> None:
             room.accusation_ends_at = None
             room.round_phase = "reveal"
             accusation_result = _resolve_accusations(room)
+            accusation_result["reveal_ends_at"] = (
+                _utc_now() + timedelta(seconds=REVEAL_SECONDS)
+            ).isoformat()
             await broadcast(room, "accusation_result", accusation_result)
 
             for player in room.players:

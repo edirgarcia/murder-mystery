@@ -2,7 +2,7 @@ export type { GamePhase, WSEvent } from "@shared/types/game";
 
 export type TeamColor = "red" | "blue";
 export type Decision = "trust" | "betray";
-export type Winner = TeamColor | "draw";
+export type Winner = TeamColor | "draw" | "nobody";
 
 export interface PDPlayerInfo {
   id: string;
@@ -54,6 +54,7 @@ export interface RoundResult {
   multiplier: number;
   teams: Record<TeamColor, RoundTeamResult>;
   team_scores: Record<TeamColor, number>;
+  reveal_ends_at?: string;
 }
 
 export interface TeamAccusationResult {
@@ -71,6 +72,7 @@ export interface AccusationResult {
   teams: Record<TeamColor, TeamAccusationResult>;
   team_scores: Record<TeamColor, number>;
   players: PDPlayerInfo[];
+  reveal_ends_at?: string;
 }
 
 export interface GameOverData {

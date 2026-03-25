@@ -10,6 +10,7 @@ import type { GamePhase } from "@shared/types/game";
 import type {
   AccusationResult,
   GameOverData,
+  PDGameInfo,
   PDPlayerInfo,
   PDPrivateState,
   RoundResult,
@@ -31,6 +32,8 @@ interface PDState {
   roundPhase: "voting" | "accusation" | "reveal" | null;
   votingEndsAt: string | null;
   accusationEndsAt: string | null;
+  revealEndsAt: string | null;
+  revealType: "round" | "accusation" | null;
   hasVoted: boolean;
   hasAccused: boolean;
   latestRoundResult: RoundResult | null;
@@ -54,6 +57,7 @@ type PDAction =
   | { type: "SET_ROUND_RESULT"; result: RoundResult }
   | { type: "SET_ACCUSATION_RESULT"; result: AccusationResult }
   | { type: "SET_WINNER"; data: GameOverData }
+  | { type: "SYNC_GAME_INFO"; info: PDGameInfo }
   | { type: "SET_ERROR"; error: string }
   | { type: "CLEAR_ERROR" }
   | { type: "RESET" };
@@ -72,6 +76,8 @@ const initialState: PDState = {
   roundPhase: null,
   votingEndsAt: null,
   accusationEndsAt: null,
+  revealEndsAt: null,
+  revealType: null,
   hasVoted: false,
   hasAccused: false,
   latestRoundResult: null,
@@ -111,6 +117,8 @@ function reducer(state: PDState, action: PDAction): PDState {
         roundPhase: "voting",
         votingEndsAt: action.votingEndsAt,
         accusationEndsAt: null,
+        revealEndsAt: null,
+        revealType: null,
         players: action.players,
         teamScores: action.teamScores,
         hasVoted: false,
@@ -126,6 +134,8 @@ function reducer(state: PDState, action: PDAction): PDState {
         roundPhase: "accusation",
         accusationEndsAt: action.accusationEndsAt,
         votingEndsAt: null,
+        revealEndsAt: null,
+        revealType: null,
         players: action.players,
         hasAccused: false,
       };
@@ -136,6 +146,8 @@ function reducer(state: PDState, action: PDAction): PDState {
         ...state,
         roundPhase: "reveal",
         votingEndsAt: null,
+        revealEndsAt: action.result.reveal_ends_at ?? null,
+        revealType: "round",
         latestRoundResult: action.result,
         teamScores: action.result.team_scores,
       };
@@ -144,6 +156,8 @@ function reducer(state: PDState, action: PDAction): PDState {
         ...state,
         roundPhase: "reveal",
         accusationEndsAt: null,
+        revealEndsAt: action.result.reveal_ends_at ?? null,
+        revealType: "accusation",
         latestAccusationResult: action.result,
         teamScores: action.result.team_scores,
         players: action.result.players,
@@ -157,6 +171,18 @@ function reducer(state: PDState, action: PDAction): PDState {
         players: action.data.players,
         finalSpies: action.data.spies,
         roundPhase: null,
+      };
+    case "SYNC_GAME_INFO":
+      return {
+        ...state,
+        phase: action.info.phase,
+        players: action.info.players,
+        teamScores: action.info.team_scores,
+        currentRound: action.info.current_round,
+        totalRounds: action.info.total_rounds,
+        roundPhase: action.info.round_phase as PDState["roundPhase"],
+        votingEndsAt: action.info.voting_ends_at ?? null,
+        accusationEndsAt: action.info.accusation_ends_at ?? null,
       };
     case "SET_ERROR":
       return { ...state, error: action.error };
@@ -220,6 +246,7 @@ export function usePDActions() {
       [dispatch]
     ),
     setWinner: useCallback((data: GameOverData) => dispatch({ type: "SET_WINNER", data }), [dispatch]),
+    syncGameInfo: useCallback((info: PDGameInfo) => dispatch({ type: "SYNC_GAME_INFO", info }), [dispatch]),
     setError: useCallback((error: string) => dispatch({ type: "SET_ERROR", error }), [dispatch]),
     clearError: useCallback(() => dispatch({ type: "CLEAR_ERROR" }), [dispatch]),
   };

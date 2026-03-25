@@ -40,6 +40,7 @@ class PDRoom(BaseGameRoom):
     winner: str | None = None
     vote_complete: asyncio.Event | None = None
     accusation_complete: asyncio.Event | None = None
+    narration_ack: asyncio.Event | None = None
     game_task: asyncio.Task | None = None
     voting_seconds: int = 45
     accusation_seconds: int = 20

@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getGameInfo } from "../api/http";
 import { usePD, usePDActions } from "../context/GameContext";
 
-function winnerLabel(winner: "red" | "blue" | "draw" | null) {
+function winnerLabel(winner: "red" | "blue" | "draw" | "nobody" | null) {
   if (winner === "red") return "Red Team Wins";
   if (winner === "blue") return "Blue Team Wins";
   if (winner === "draw") return "Draw";
+  if (winner === "nobody") return "Nobody Wins";
   return "Game Over";
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { buildWsUrl, getGameInfo } from "../api/http";
 import { usePD, usePDActions } from "../context/GameContext";
@@ -17,6 +17,22 @@ function teamLabel(team: TeamColor) {
   return team === "red" ? "Red Team" : "Blue Team";
 }
 
+function phaseLabel(
+  roundPhase: string | null,
+  revealType: "round" | "accusation" | null,
+  phase: string | null,
+): { text: string; color: string } {
+  if (phase === "lobby") return { text: "Waiting in Lobby", color: "text-mystery-300" };
+  if (!roundPhase) return { text: "Starting...", color: "text-mystery-300" };
+  if (roundPhase === "voting") return { text: "Voting Phase", color: "text-emerald-400" };
+  if (roundPhase === "reveal" && revealType === "round")
+    return { text: "Round Results", color: "text-amber-400" };
+  if (roundPhase === "accusation") return { text: "Accusation Phase", color: "text-purple-400" };
+  if (roundPhase === "reveal" && revealType === "accusation")
+    return { text: "Accusation Results", color: "text-amber-400" };
+  return { text: "In Progress", color: "text-mystery-300" };
+}
+
 export default function DashboardPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
@@ -32,7 +48,10 @@ export default function DashboardPage() {
     setRoundResult,
     setTeamScores,
     setWinner,
+    syncGameInfo,
   } = usePDActions();
+  const [narrationText, setNarrationText] = useState<string | null>(null);
+  const sendAckRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (state.playerId || !code) return;
@@ -46,14 +65,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!code) return;
     getGameInfo(code).then((info) => {
-      setPhase(info.phase);
-      setPlayers(info.players);
-      setTeamScores(info.team_scores);
+      syncGameInfo(info);
       if (info.phase === "finished") {
         navigate(`/result/${code}`, { replace: true });
       }
     });
-  }, [code, navigate, setPhase, setPlayers, setTeamScores]);
+  }, [code, navigate, syncGameInfo]);
 
   const handleWSEvent = useCallback(
     (event: WSEvent) => {
@@ -70,6 +87,21 @@ export default function DashboardPage() {
           setPhase("playing");
           setPlayers(event.data.players as PDPlayerInfo[]);
           setTeamScores(event.data.team_scores as Record<TeamColor, number>);
+          setNarrationText("");
+          break;
+        case "intro_narration": {
+          setNarrationText(event.data.text as string);
+          const sound = event.data.sound as string | undefined;
+          if (sound) {
+            const audio = new Audio(`/prisoners-dilemma/audio/${sound}`);
+            audio.onended = () => sendAckRef.current();
+            audio.onerror = () => sendAckRef.current();
+            audio.play().catch(() => sendAckRef.current());
+          }
+          break;
+        }
+        case "intro_done":
+          setNarrationText(null);
           break;
         case "round_started":
           roundStarted(
@@ -114,13 +146,27 @@ export default function DashboardPage() {
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
-  useWebSocket(wsUrl, handleWSEvent);
+  const wsRef = useWebSocket(wsUrl, handleWSEvent);
+
+  sendAckRef.current = () => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "narration_ack" }));
+    }
+  };
 
   const redPlayers = state.players.filter((player) => player.team === "red");
   const bluePlayers = state.players.filter((player) => player.team === "blue");
 
   return (
     <div className="min-h-screen px-4 py-6">
+      {narrationText !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
+            {narrationText}
+          </p>
+        </div>
+      )}
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="rounded-[32px] border border-white/10 bg-mystery-800/80 p-6 shadow-xl">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -129,6 +175,11 @@ export default function DashboardPage() {
               <h1 className="mt-2 text-4xl font-bold text-white">
                 Round {state.currentRound || 1} / {state.totalRounds}
               </h1>
+              {state.phase === "playing" && (
+                <p className={`mt-2 text-lg font-semibold uppercase tracking-[0.2em] ${phaseLabel(state.roundPhase, state.revealType, state.phase).color}`}>
+                  {phaseLabel(state.roundPhase, state.revealType, state.phase).text}
+                </p>
+              )}
             </div>
             <div className="flex gap-3">
               <div className="rounded-2xl border border-red-400/30 bg-red-500/10 px-5 py-3 text-red-100">
@@ -149,6 +200,11 @@ export default function DashboardPage() {
           {state.roundPhase === "accusation" && state.accusationEndsAt && (
             <div className="mt-6">
               <CountdownBar endsAt={state.accusationEndsAt} totalSeconds={20} label="Accusation closes in" />
+            </div>
+          )}
+          {state.roundPhase === "reveal" && state.revealEndsAt && (
+            <div className="mt-6">
+              <CountdownBar endsAt={state.revealEndsAt} totalSeconds={25} label="Next phase in" />
             </div>
           )}
         </header>
