@@ -294,6 +294,17 @@ export default function DashboardPage() {
                 return (
                   <div key={team} className="rounded-2xl bg-mystery-900/70 p-5">
                     <h3 className="text-xl font-semibold text-white">{teamLabel(team)}</h3>
+                    {result.voters && result.voters.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {result.voters.map((v, i) => (
+                          <p key={i} className="text-sm text-mystery-300">
+                            <span className="text-white">{v.accuser_name}</span>
+                            {" accused "}
+                            <span className="text-white">{v.target_name}</span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
                     {!result.accusation_triggered && (
                       <p className="mt-3 text-mystery-200">No accusation landed this round.</p>
                     )}

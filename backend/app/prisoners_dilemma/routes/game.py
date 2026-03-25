@@ -160,13 +160,21 @@ def _resolve_round(room: PDRoom) -> dict:
 def _resolve_accusations(room: PDRoom) -> dict:
     result = {"round": room.current_round, "teams": {}, "team_scores": {}}
 
+    # Group accusations by the TARGET's team, not the accuser's team.
+    # This means spy accusations (targeting the opposite team) count
+    # toward that team's accusation pool.
     for team in (TeamColor.RED, TeamColor.BLUE):
         team_player_ids = player_ids_for_team(room.game_players, team)
-        team_accusations = {
-            pid: target_id
-            for pid, target_id in room.current_accusations.items()
-            if pid in team_player_ids
-        }
+        # Collect accusations where the target is on this team
+        team_accusations: dict[str, str | None] = {}
+        for pid, target_id in room.current_accusations.items():
+            if target_id and target_id in room.game_players:
+                if room.game_players[target_id].team == team:
+                    team_accusations[pid] = target_id
+            elif pid in team_player_ids:
+                # Player passed (no accusation) — count toward their own team
+                team_accusations[pid] = None
+
         active_spy_id = _active_spy_id(room, team)
         team_result = resolve_team_accusation(team_player_ids, team_accusations, active_spy_id)
 
@@ -179,9 +187,21 @@ def _resolve_accusations(room: PDRoom) -> dict:
                 accused_player.spy_active = False
                 accused_player.spy_exposed = True
 
+        # Build voter details for dashboard display
+        voters = []
+        for pid, target_id in team_accusations.items():
+            accuser = room.game_players.get(pid)
+            if accuser and target_id:
+                target = room.game_players.get(target_id)
+                voters.append({
+                    "accuser_name": accuser.name,
+                    "target_name": target.name if target else "Unknown",
+                })
+
         room.team_scores[team] += team_result["score_delta"]
         team_result["accused_player_name"] = accused_player_name
         team_result["total_score"] = room.team_scores[team]
+        team_result["voters"] = voters
         result["teams"][team.value] = team_result
 
     result["team_scores"] = {
@@ -333,8 +353,16 @@ async def submit_accusation(
         if target_id == x_player_id:
             raise HTTPException(status_code=400, detail="Cannot accuse yourself")
         target = room.game_players.get(target_id or "")
-        if not target or target.team != player.team:
-            raise HTTPException(status_code=400, detail="Can only accuse a teammate")
+        if not target:
+            raise HTTPException(status_code=400, detail="Target not found")
+        # Spies accuse the opposite team (their display team); regular players accuse their own team
+        expected_target_team = (
+            (TeamColor.BLUE if player.team == TeamColor.RED else TeamColor.RED)
+            if player.is_spy
+            else player.team
+        )
+        if target.team != expected_target_team:
+            raise HTTPException(status_code=400, detail="Invalid accusation target")
 
     room.current_accusations[x_player_id] = target_id if req.accuse else None
 

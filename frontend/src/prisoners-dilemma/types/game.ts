@@ -57,6 +57,11 @@ export interface RoundResult {
   reveal_ends_at?: string;
 }
 
+export interface AccusationVoter {
+  accuser_name: string;
+  target_name: string;
+}
+
 export interface TeamAccusationResult {
   accusation_triggered: boolean;
   accused_player_id: string | null;
@@ -65,6 +70,7 @@ export interface TeamAccusationResult {
   score_delta: number;
   spy_neutralized: boolean;
   total_score: number;
+  voters: AccusationVoter[];
 }
 
 export interface AccusationResult {

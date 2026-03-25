@@ -168,12 +168,17 @@ export default function PlayerPage() {
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
   useWebSocket(wsUrl, handleWSEvent);
 
-  const myTeamMates = useMemo(
+  // Spies accuse the display team (opposite); regular players accuse their own team
+  const accusationTeamColor = state.privateState?.is_spy
+    ? (state.privateState.team === "red" ? "blue" : "red")
+    : state.privateState?.team;
+
+  const accusationTargets = useMemo(
     () =>
       state.players.filter(
-        (player) => player.team === state.privateState?.team && player.id !== state.playerId
+        (player) => player.team === accusationTeamColor && player.id !== state.playerId
       ),
-    [state.playerId, state.players, state.privateState?.team]
+    [accusationTeamColor, state.playerId, state.players]
   );
 
   async function handleAccusationSubmit() {
@@ -372,7 +377,7 @@ export default function PlayerPage() {
                   </button>
 
                   <div className="space-y-3">
-                    {myTeamMates.map((player) => (
+                    {accusationTargets.map((player) => (
                       <button
                         key={player.id}
                         onClick={() => setAccuseTarget(player.id)}
