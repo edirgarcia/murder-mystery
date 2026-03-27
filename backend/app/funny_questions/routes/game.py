@@ -107,15 +107,15 @@ async def _run_fq_intro(room) -> None:
                 "fq-selfvote.mp3",
             ),
             (
-                "But watch out! If you vote for yourself and nobody else does, you get the Shame.",
+                "If you vote for yourself and nobody else does, you get the mark of Shame.",
                 "fq-shame.mp3",
             ),
             (
-                "While holding the Shame, you can't earn any points.",
+                "While holding the mark of Shame, you can't earn any points.",
                 "fq-no-points.mp3",
             ),
             (
-                "To clear it, vote for yourself and hope someone else does too, or wait for someone else to get the Mark.",
+                "To clear it, vote for yourself and hope someone else does too, or wait for someone else to get the mark.",
                 "fq-clear-shame.mp3",
             ),
             (

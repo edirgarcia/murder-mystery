@@ -287,7 +287,7 @@ export default function PlayerPage() {
   return (
     <div className="min-h-screen px-4 py-6">
       <div className="max-w-lg mx-auto space-y-4">
-        <RoleCard role={state.role} alive={state.alive} isAlpha={state.role === "werewolf" && state.playerId === state.alphaWolfId} />
+        <RoleCard role={state.role} alive={state.alive} isAlpha={state.role === "werewolf" && state.playerId === state.alphaWolfId} playerId={state.playerId ?? undefined} />
 
         {(state.nightSubPhase || state.daySubPhase) && (
           <div className="bg-mystery-800 rounded-2xl p-4 border border-mystery-700">
