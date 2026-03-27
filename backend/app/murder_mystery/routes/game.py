@@ -91,6 +91,7 @@ async def _run_mm_intro(room) -> None:
             ("Someone here is a killer.", "mm-killer.mp3"),
             (f"The weapon: {room.murder_weapon}", "mm-weapon.mp3"),
             ("Examine your clues. Find the truth.", "mm-examine.mp3"),
+            ("The game is starting now.", "mm-starting.mp3"),
         ]
         for text, sound in narration:
             await _mm_narrate(room, text, sound)
