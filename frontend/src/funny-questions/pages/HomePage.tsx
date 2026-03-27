@@ -57,7 +57,7 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-mystery-300 mb-2">
-            Funny Questions
+            Silly Questions
           </h1>
           <p className="text-mystery-400 text-lg">Vote. Shame. Win.</p>
         </div>

@@ -139,6 +139,18 @@ export default function VotePage() {
     );
   }
 
+  // Winner determined — navigate to result
+  if (state.winner) {
+    navigate(`/result/${code}`, { replace: true });
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center space-y-4">
+          <h2 className="text-4xl font-bold text-mystery-300">{state.winner} wins!</h2>
+        </div>
+      </div>
+    );
+  }
+
   // Reveal phase — tell players to look at the dashboard
   if (state.roundPhase === "reveal") {
     return (
