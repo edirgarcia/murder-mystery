@@ -161,17 +161,7 @@ export default function DashboardPage() {
           </div>
 
           {state.roundPhase === "reveal" && state.roundResult ? (
-            <>
-              <RoundReveal result={state.roundResult} />
-              {state.hostPaced && !state.winner && (
-                <button
-                  onClick={() => code && state.playerId && nextQuestion(code, state.playerId)}
-                  className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
-                >
-                  Next Question
-                </button>
-              )}
-            </>
+            <RoundReveal result={state.roundResult} />
           ) : state.currentQuestion ? (
             <>
               <QuestionCard question={state.currentQuestion} round={state.currentRound} />
@@ -184,6 +174,15 @@ export default function DashboardPage() {
           )}
 
           <ScoreBoard scores={state.scores} shameHolder={state.shameHolder} pointsToWin={state.pointsToWin} />
+
+          {state.roundPhase === "reveal" && state.hostPaced && !state.winner && (
+            <button
+              onClick={() => code && state.playerId && nextQuestion(code, state.playerId)}
+              className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
+            >
+              Next Question
+            </button>
+          )}
         </div>
       </div>
     );

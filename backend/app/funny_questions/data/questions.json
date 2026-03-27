@@ -138,6 +138,10 @@
   {"text": "Who would lie to a cop and somehow make it worse?", "category": "personality", "spice_level": 2},
   {"text": "Who is most likely to be the reason the group gets kicked out?", "category": "lifestyle", "spice_level": 3},
   {"text": "Who is most likely to turn a minor inconvenience into a full crime documentary?", "category": "personality", "spice_level": 1},
-  {"text": "Who is most likely to steal something tiny just for the thrill?", "category": "secrets", "spice_level": 3}
+  {"text": "Who is most likely to steal something tiny just for the thrill?", "category": "secrets", "spice_level": 3},
+  {"text": "Who has the best eyesight?", "category": "skills", "spice_level": 1},
+  {"text": "Who has the worst eyesight?", "category": "skills", "spice_level": 1},
+  {"text": "Who has the best handwriting?", "category": "skills", "spice_level": 1},
+  {"text": "Who has the worst handwriting?", "category": "skills", "spice_level": 1}
 ]
 
