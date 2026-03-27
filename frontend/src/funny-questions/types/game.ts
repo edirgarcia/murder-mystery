@@ -15,6 +15,7 @@ export interface FQGameInfo {
   voting_ends_at: string | null;
   winner: string | null;
   points_to_win: number;
+  host_paced: boolean;
 }
 
 export interface PlayerScoreEntry {

@@ -46,4 +46,5 @@ def build_game_info(room: FQRoom) -> dict:
         "voting_ends_at": room.voting_ends_at,
         "winner": winner_name,
         "points_to_win": room.points_to_win,
+        "host_paced": room.host_paced,
     }

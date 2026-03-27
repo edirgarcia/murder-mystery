@@ -1,14 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useFQ, useFQActions } from "../context/GameContext";
-import { getScores } from "../api/http";
+import { useWebSocket } from "@shared/hooks/useWebSocket";
+import { getScores, buildWsUrl } from "../api/http";
+import type { WSEvent } from "@shared/types/game";
 import ScoreBoard from "../components/ScoreBoard";
 
 export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useFQ();
-  const { setScores, setGame } = useFQActions();
+  const { setScores, setGame, resetGame: resetGameState } = useFQActions();
 
   // Restore from localStorage
   useEffect(() => {
@@ -33,6 +35,19 @@ export default function ResultPage() {
     });
   }, [code]);
 
+  const handleWSEvent = useCallback(
+    (event: WSEvent) => {
+      if (event.event === "game_reset") {
+        resetGameState();
+        navigate(`/lobby/${code}`);
+      }
+    },
+    [code, navigate, resetGameState]
+  );
+
+  const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
+  useWebSocket(wsUrl, handleWSEvent);
+
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-md mx-auto space-y-6">
@@ -47,12 +62,9 @@ export default function ResultPage() {
 
         <ScoreBoard scores={state.scores} shameHolder={state.shameHolder} pointsToWin={state.pointsToWin} />
 
-        <button
-          onClick={() => navigate("/")}
-          className="w-full py-3 rounded-xl bg-mystery-700 hover:bg-mystery-600 text-white font-semibold text-lg transition"
-        >
-          Play Again
-        </button>
+        <p className="text-mystery-400 text-sm text-center animate-pulse">
+          Waiting for host to start a new game...
+        </p>
       </div>
     </div>
   );

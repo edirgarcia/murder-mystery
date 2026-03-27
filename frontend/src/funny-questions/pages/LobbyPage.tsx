@@ -14,6 +14,7 @@ export default function LobbyPage() {
   const { setGame, setPlayers, addPlayer, setPhase, setError, setPointsToWin } = useFQActions();
   const [maxSpice, setMaxSpice] = useState(2);
   const [pointsToWin, setLocalPointsToWin] = useState(20);
+  const [hostPaced, setHostPaced] = useState(false);
   const [starting, setStarting] = useState(false);
 
   // Restore from localStorage
@@ -78,6 +79,7 @@ export default function LobbyPage() {
       await startGame(code, state.playerId, {
         max_spice: maxSpice,
         points_to_win: pointsToWin,
+        host_paced: hostPaced,
       });
     } catch (e: any) {
       setError(e.message);
@@ -155,6 +157,30 @@ export default function LobbyPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="bg-mystery-800 rounded-2xl p-4 shadow-xl">
+              <button
+                onClick={() => setHostPaced(!hostPaced)}
+                disabled={starting}
+                className="w-full flex items-center justify-between disabled:opacity-40"
+              >
+                <div className="text-left">
+                  <h3 className="text-mystery-300 font-semibold text-sm">Host-Paced</h3>
+                  <p className="text-mystery-500 text-xs mt-0.5">You control when the next question appears</p>
+                </div>
+                <div
+                  className={`w-11 h-6 rounded-full transition-colors ${
+                    hostPaced ? "bg-mystery-500" : "bg-mystery-700"
+                  } relative`}
+                >
+                  <div
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                      hostPaced ? "translate-x-5" : "translate-x-0.5"
+                    }`}
+                  />
+                </div>
+              </button>
             </div>
 
             <button

@@ -26,6 +26,7 @@ interface FQState {
   shameHolder: string | null;
   winner: string | null;
   pointsToWin: number;
+  hostPaced: boolean;
   error: string | null;
 }
 
@@ -40,9 +41,11 @@ type FQAction =
   | { type: "SET_ROUND_RESULT"; result: RoundResult }
   | { type: "SET_WINNER"; winner: string }
   | { type: "SET_POINTS_TO_WIN"; pointsToWin: number }
+  | { type: "SET_HOST_PACED"; hostPaced: boolean }
   | { type: "SET_ERROR"; error: string }
   | { type: "CLEAR_ERROR" }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "RESET_GAME" };
 
 const initialState: FQState = {
   code: null,
@@ -61,6 +64,7 @@ const initialState: FQState = {
   shameHolder: null,
   winner: null,
   pointsToWin: 20,
+  hostPaced: false,
   error: null,
 };
 
@@ -110,12 +114,24 @@ function fqReducer(state: FQState, action: FQAction): FQState {
       return { ...state, winner: action.winner, phase: "finished" };
     case "SET_POINTS_TO_WIN":
       return { ...state, pointsToWin: action.pointsToWin };
+    case "SET_HOST_PACED":
+      return { ...state, hostPaced: action.hostPaced };
     case "SET_ERROR":
       return { ...state, error: action.error };
     case "CLEAR_ERROR":
       return { ...state, error: null };
     case "RESET":
       return initialState;
+    case "RESET_GAME":
+      return {
+        ...initialState,
+        code: state.code,
+        playerId: state.playerId,
+        playerName: state.playerName,
+        isHost: state.isHost,
+        players: state.players,
+        phase: "lobby",
+      };
     default:
       return state;
   }
@@ -184,10 +200,15 @@ export function useFQActions() {
       (pointsToWin: number) => dispatch({ type: "SET_POINTS_TO_WIN", pointsToWin }),
       [dispatch]
     ),
+    setHostPaced: useCallback(
+      (hostPaced: boolean) => dispatch({ type: "SET_HOST_PACED", hostPaced }),
+      [dispatch]
+    ),
     setError: useCallback(
       (error: string) => dispatch({ type: "SET_ERROR", error }),
       [dispatch]
     ),
     reset: useCallback(() => dispatch({ type: "RESET" }), [dispatch]),
+    resetGame: useCallback(() => dispatch({ type: "RESET_GAME" }), [dispatch]),
   };
 }

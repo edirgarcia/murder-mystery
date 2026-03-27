@@ -14,7 +14,7 @@ export async function getGameInfo(code: string): Promise<FQGameInfo> {
 export async function startGame(
   code: string,
   hostId: string,
-  options?: { categories?: string[]; max_spice?: number; points_to_win?: number }
+  options?: { categories?: string[]; max_spice?: number; points_to_win?: number; host_paced?: boolean }
 ): Promise<void> {
   await request(`${BASE}/${code}/start`, {
     method: "POST",
@@ -32,6 +32,26 @@ export async function vote(
     method: "POST",
     headers: { "X-Player-Id": playerId },
     body: JSON.stringify({ voted_for: votedFor }),
+  });
+}
+
+export async function nextQuestion(
+  code: string,
+  hostId: string
+): Promise<void> {
+  await request(`${BASE}/${code}/next`, {
+    method: "POST",
+    headers: { "X-Player-Id": hostId },
+  });
+}
+
+export async function resetGame(
+  code: string,
+  hostId: string
+): Promise<void> {
+  await request(`${BASE}/${code}/reset`, {
+    method: "POST",
+    headers: { "X-Player-Id": hostId },
   });
 }
 

@@ -11,6 +11,7 @@ class StartFQRequest(BaseModel):
     categories: list[str] | None = None
     max_spice: int = Field(default=2, ge=1, le=3)
     points_to_win: int = Field(default=20, ge=5, le=50)
+    host_paced: bool = False
 
 
 class VoteRequest(BaseModel):
@@ -33,6 +34,7 @@ class FQGameInfo(BaseModel):
     voting_ends_at: str | None = None
     winner: str | None = None
     points_to_win: int = 20
+    host_paced: bool = False
 
 
 class PlayerScoreEntry(BaseModel):

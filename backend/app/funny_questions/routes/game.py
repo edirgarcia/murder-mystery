@@ -38,6 +38,43 @@ async def _fq_narrate(room, text: str, sound: str) -> None:
     room.narration_ack = None
 
 
+@router.post("/{code}/reset")
+async def reset_game(
+    code: str,
+    x_player_id: str = Header(...),
+) -> dict:
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can reset")
+    if room.phase != GamePhase.FINISHED:
+        raise HTTPException(status_code=400, detail="Game is not finished")
+
+    # Cancel running tasks
+    if room.game_task and not room.game_task.done():
+        room.game_task.cancel()
+    room.game_task = None
+
+    # Reset game state, keep players and room info
+    room.phase = GamePhase.LOBBY
+    room.scores = {}
+    room.current_round = 0
+    room.round_phase = None
+    room.shame_holder = None
+    room.questions = []
+    room.question_index = 0
+    room.current_votes = {}
+    room.vote_complete = None
+    room.next_round = None
+    room.narration_ack = None
+    room.voting_ends_at = None
+    room.winner = None
+
+    await broadcast(room, "game_reset", {})
+    return {"status": "reset"}
+
+
 async def _run_fq_intro(room) -> None:
     """Run intro narration explaining the rules, then start the game loop."""
     try:
@@ -133,6 +170,7 @@ async def start_game(
         raise HTTPException(status_code=400, detail="No questions match the selected filters")
 
     room.points_to_win = req.points_to_win
+    room.host_paced = req.host_paced
     room.scores = {p.id: 0 for p in room.players}
     room.phase = GamePhase.PLAYING
 
@@ -143,6 +181,7 @@ async def start_game(
     await broadcast(room, "game_started", {
         "message": "Game is starting!",
         "points_to_win": room.points_to_win,
+        "host_paced": room.host_paced,
     })
 
     return {"status": "started"}
@@ -208,6 +247,23 @@ async def get_scores(code: str) -> list[PlayerScoreEntry]:
         ))
     entries.sort(key=lambda e: e.score, reverse=True)
     return entries
+
+
+@router.post("/{code}/next")
+async def next_question(
+    code: str,
+    x_player_id: str = Header(...),
+) -> dict:
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can advance")
+    if room.phase != GamePhase.PLAYING:
+        raise HTTPException(status_code=400, detail="Game not in progress")
+    if room.next_round:
+        room.next_round.set()
+    return {"status": "ok"}
 
 
 async def _run_game(room) -> None:
@@ -317,8 +373,16 @@ async def _run_game(room) -> None:
                 })
                 return
 
-            # Reveal pause
-            await asyncio.sleep(REVEAL_SECONDS)
+            # Reveal pause — host-paced waits for host to advance, auto falls back after timeout
+            if room.host_paced:
+                room.next_round = asyncio.Event()
+                try:
+                    await asyncio.wait_for(room.next_round.wait(), timeout=300)
+                except asyncio.TimeoutError:
+                    pass
+                room.next_round = None
+            else:
+                await asyncio.sleep(REVEAL_SECONDS)
 
             room.question_index += 1
 

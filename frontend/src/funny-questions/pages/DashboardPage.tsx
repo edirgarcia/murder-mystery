@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useFQ, useFQActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
-import { getGameInfo, buildWsUrl } from "../api/http";
+import { getGameInfo, nextQuestion, resetGame, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
 import type { RoundResult } from "../types/game";
 import QuestionCard from "../components/QuestionCard";
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useFQ();
-  const { setGame, setPlayers, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setScores, setPointsToWin } = useFQActions();
+  const { setGame, setPlayers, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setScores, setPointsToWin, setHostPaced, resetGame: resetGameState } = useFQActions();
   const [narrationText, setNarrationText] = useState<string | null>(null);
   const sendAckRef = useRef<() => void>(() => {});
 
@@ -36,6 +36,7 @@ export default function DashboardPage() {
       setPhase(info.phase);
       if (info.scores) setScores(info.scores);
       if (info.points_to_win) setPointsToWin(info.points_to_win);
+      if (info.host_paced) setHostPaced(info.host_paced);
       if (info.current_question && info.round_phase === "voting") {
         newQuestion(
           info.current_question,
@@ -61,6 +62,9 @@ export default function DashboardPage() {
           setNarrationText("");
           if (event.data.points_to_win) {
             setPointsToWin(event.data.points_to_win as number);
+          }
+          if (event.data.host_paced) {
+            setHostPaced(event.data.host_paced as boolean);
           }
           break;
         case "intro_narration": {
@@ -94,9 +98,14 @@ export default function DashboardPage() {
         case "game_over":
           setWinner(event.data.winner_name as string);
           break;
+        case "game_reset":
+          resetGameState();
+          setNarrationText(null);
+          navigate(`/lobby/${code}`);
+          break;
       }
     },
-    [code, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setPointsToWin]
+    [code, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setPointsToWin, setHostPaced, resetGameState]
   );
 
   const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
@@ -120,8 +129,12 @@ export default function DashboardPage() {
           </div>
           <ScoreBoard scores={state.scores} shameHolder={state.shameHolder} pointsToWin={state.pointsToWin} />
           <button
-            onClick={() => navigate("/")}
-            className="w-full py-3 rounded-xl bg-mystery-700 hover:bg-mystery-600 text-white font-semibold text-lg transition"
+            onClick={() => {
+              if (code && state.playerId) {
+                resetGame(code, state.playerId).catch(() => {});
+              }
+            }}
+            className="w-full py-3 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
           >
             Play Again
           </button>
@@ -148,7 +161,17 @@ export default function DashboardPage() {
           </div>
 
           {state.roundPhase === "reveal" && state.roundResult ? (
-            <RoundReveal result={state.roundResult} />
+            <>
+              <RoundReveal result={state.roundResult} />
+              {state.hostPaced && !state.winner && (
+                <button
+                  onClick={() => code && state.playerId && nextQuestion(code, state.playerId)}
+                  className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
+                >
+                  Next Question
+                </button>
+              )}
+            </>
           ) : state.currentQuestion ? (
             <>
               <QuestionCard question={state.currentQuestion} round={state.currentRound} />

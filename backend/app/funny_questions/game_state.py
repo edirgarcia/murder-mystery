@@ -28,8 +28,11 @@ class FQRoom(BaseGameRoom):
     narration_ack: asyncio.Event | None = None
     # Config
     points_to_win: int = 20
+    host_paced: bool = False
     voting_ends_at: str | None = None
     winner: str | None = None
+    # Signal for host to advance to next question
+    next_round: asyncio.Event | None = None
 
 
 class FQStore(GameStore[FQRoom]):
