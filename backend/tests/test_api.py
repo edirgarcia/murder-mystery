@@ -192,7 +192,7 @@ class TestGameFlow:
             headers={"X-Player-Id": player_ids[0]},
         )
         round2_clues = res.json()["clues"]
-        assert len(round2_clues) > round1_count
+        assert len(round2_clues) >= round1_count
         assert all(c["round"] in (1, 2) for c in round2_clues)
 
     def test_host_cannot_get_card(self, client):

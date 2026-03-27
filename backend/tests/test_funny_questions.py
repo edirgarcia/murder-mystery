@@ -192,9 +192,10 @@ class TestFQAPI:
             headers={"X-Player-Id": host_id},
         )
 
-        # Wait a moment for game loop to start
-        import time
-        time.sleep(0.2)
+        # Directly set voting phase (async game loop can't progress
+        # during sync TestClient requests)
+        room = fq_store.get_room(code)
+        room.round_phase = "voting"
 
         # Vote
         res = client.post(
@@ -238,8 +239,10 @@ class TestFQAPI:
             headers={"X-Player-Id": host_id},
         )
 
-        import time
-        time.sleep(0.2)
+        # Directly set voting phase (async game loop can't progress
+        # during sync TestClient requests)
+        room = fq_store.get_room(code)
+        room.round_phase = "voting"
 
         res = client.post(
             f"/api/fq/games/{code}/vote",

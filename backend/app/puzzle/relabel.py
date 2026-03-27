@@ -33,7 +33,7 @@ class _LoadedClue:
         return {"type": self._type, "text": self._text}
 
 
-PUZZLES_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "puzzles"
+PUZZLES_DIR = Path(__file__).resolve().parent.parent / "murder_mystery" / "data" / "puzzles"
 
 
 def load_puzzle(
