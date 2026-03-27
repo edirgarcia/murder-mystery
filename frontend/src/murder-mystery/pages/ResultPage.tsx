@@ -1,16 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, useGameActions } from "../context/GameContext";
-import { getResults } from "../api/http";
+import { useWebSocket } from "@shared/hooks/useWebSocket";
+import { getResults, buildWsUrl } from "../api/http";
 import type { ResultsResponse } from "../types/game";
+import type { WSEvent } from "@shared/types/game";
 
 export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setPhase } = useGameActions();
+  const { setPhase, resetGameState } = useGameActions();
   const [results, setResults] = useState<ResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleWSEvent = useCallback(
+    (event: WSEvent) => {
+      if (event.event === "game_reset") {
+        resetGameState();
+        navigate(`/lobby/${code}`);
+      }
+    },
+    [code, navigate, resetGameState]
+  );
+
+  const wsUrl = code && state.playerId ? buildWsUrl(code, state.playerId) : null;
+  useWebSocket(wsUrl, handleWSEvent);
 
   useEffect(() => {
     if (!code) return;
@@ -110,12 +125,9 @@ export default function ResultPage() {
           </div>
         )}
 
-        <button
-          onClick={() => navigate("/")}
-          className="w-full py-3 rounded-xl bg-mystery-700 hover:bg-mystery-600 text-white font-semibold text-lg transition"
-        >
-          Play Again
-        </button>
+        <p className="text-mystery-400 text-sm text-center">
+          Waiting for host to start a new game...
+        </p>
       </div>
     </div>
   );

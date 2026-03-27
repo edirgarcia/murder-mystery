@@ -88,6 +88,16 @@ export async function endGame(
   });
 }
 
+export async function resetGame(
+  code: string,
+  hostId: string
+): Promise<void> {
+  await request(`${BASE}/${code}/reset`, {
+    method: "POST",
+    headers: { "X-Player-Id": hostId },
+  });
+}
+
 export function buildWsUrl(code: string, playerId: string): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const host = window.location.host;

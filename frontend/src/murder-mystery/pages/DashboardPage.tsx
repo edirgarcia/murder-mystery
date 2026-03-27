@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useGame, useGameActions } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
-import { getGameInfo, startGame, advanceRound, endGame, getResults, buildWsUrl } from "../api/http";
+import { getGameInfo, startGame, advanceRound, endGame, getResults, resetGame, buildWsUrl } from "../api/http";
 import type { Difficulty, LeaderboardEntry, ClueInfo } from "../types/game";
 import type { WSEvent } from "@shared/types/game";
 import PlayerList from "@shared/components/PlayerList";
@@ -169,6 +169,19 @@ export default function DashboardPage() {
           }
           break;
         }
+        case "game_reset":
+          setPhase("lobby");
+          setStarting(false);
+          setGuessesCount(0);
+          setLeaderboard(null);
+          setMurderClues(null);
+          setMurdererName(null);
+          setMurderWeaponLocal(null);
+          setCurrentRound(0);
+          setRoundStartedAt(null);
+          setRoundDurationSeconds(null);
+          setNarrationText(null);
+          break;
       }
     },
     [code, addPlayer, setPhase, setError, setRoundInfo, setMurderWeapon, setRoundDurations]
@@ -463,8 +476,12 @@ export default function DashboardPage() {
         )}
 
         <button
-          onClick={() => navigate("/")}
-          className="w-full py-3 rounded-xl bg-mystery-700 hover:bg-mystery-600 text-white font-semibold text-lg transition"
+          onClick={() => {
+            if (code && state.playerId) {
+              resetGame(code, state.playerId).catch((e) => setError(e.message));
+            }
+          }}
+          className="w-full py-3 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
         >
           Play Again
         </button>

@@ -402,6 +402,43 @@ async def end_game(code: str, x_player_id: str = Header(...)) -> dict:
     return {"status": "finished"}
 
 
+@router.post("/{code}/reset")
+async def reset_game(code: str, x_player_id: str = Header(...)) -> dict:
+    """Reset a finished game back to lobby, keeping players and room code."""
+    room = store.get_room(code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if not store.is_host(room, x_player_id):
+        raise HTTPException(status_code=403, detail="Only the host can reset the game")
+    if room.phase != GamePhase.FINISHED:
+        raise HTTPException(status_code=400, detail="Game is not finished")
+
+    # Cancel any running tasks
+    for task in (room.timer_task, room.intro_task):
+        if task and not task.done():
+            task.cancel()
+    room.timer_task = None
+    room.intro_task = None
+
+    # Clear game-specific state, keep players/connections/code
+    room.phase = GamePhase.LOBBY
+    room.solution = None
+    room.murderer_name = None
+    room.murder_weapon = None
+    room.cards = None
+    room.murder_clue_dicts = None
+    room.clue_round_assignments = None
+    room.difficulty = None
+    room.started_at = None
+    room.round_started_at = None
+    room.current_round = 0
+    room.guesses = {}
+    room.narration_ack = None
+
+    await broadcast(room, "game_reset", {})
+    return {"status": "reset"}
+
+
 @router.get("/{code}/results", response_model=ResultsResponse)
 async def get_results(code: str) -> ResultsResponse:
     room = store.get_room(code)

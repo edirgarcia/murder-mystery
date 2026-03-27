@@ -44,7 +44,8 @@ type GameAction =
   | { type: "SET_ROUND_DURATIONS"; roundDurations: number[] }
   | { type: "SET_ERROR"; error: string }
   | { type: "CLEAR_ERROR" }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "RESET_GAME" };
 
 const initialState: GameState = {
   code: null,
@@ -118,6 +119,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, error: null };
     case "RESET":
       return initialState;
+    case "RESET_GAME":
+      return {
+        ...initialState,
+        code: state.code,
+        playerId: state.playerId,
+        playerName: state.playerName,
+        isHost: state.isHost,
+        players: state.players,
+        phase: "lobby",
+      };
     default:
       return state;
   }
@@ -212,6 +223,8 @@ export function useGameActions() {
 
   const reset = useCallback(() => dispatch({ type: "RESET" }), [dispatch]);
 
+  const resetGameState = useCallback(() => dispatch({ type: "RESET_GAME" }), [dispatch]);
+
   return {
     setGame,
     setPhase,
@@ -226,5 +239,6 @@ export function useGameActions() {
     setRoundDurations,
     setError,
     reset,
+    resetGameState,
   };
 }
