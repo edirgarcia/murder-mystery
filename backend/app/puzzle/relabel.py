@@ -168,6 +168,25 @@ def _dict_to_puzzle(d: dict) -> Puzzle:
         for card in d["cards"]
     ]
 
+    # Ensure every card has at least 3 clues (one per round) by duplicating
+    # clues from other cards if needed
+    rng = random.Random()
+    for card in cards:
+        while len(card.clues) < 3:
+            existing_texts = {c.render() for c in card.clues}
+            donor = None
+            for other in rng.sample(cards, len(cards)):
+                for clue in other.clues:
+                    if clue.render() not in existing_texts:
+                        donor = clue
+                        break
+                if donor:
+                    break
+            if donor:
+                card.clues.append(donor)
+            else:
+                break
+
     round_assignments = assign_rounds(cards, murder_clues)
 
     return Puzzle(

@@ -119,6 +119,26 @@ def distribute_clues(
                 idx = rng.choice(candidates)
                 cards[idx].clues.append(clue)
 
+    # Ensure every card has at least 3 clues (one per round) by duplicating
+    # clues from other cards if needed
+    min_per_card = 3
+    for i, card in enumerate(cards):
+        while len(card.clues) < min_per_card:
+            # Find a clue from another card that this card doesn't have
+            existing_texts = {c.render() for c in card.clues}
+            donor = None
+            for other in rng.sample(cards, len(cards)):
+                for clue in other.clues:
+                    if clue.render() not in existing_texts:
+                        donor = clue
+                        break
+                if donor:
+                    break
+            if donor:
+                card.clues.append(donor)
+            else:
+                break  # no unique clues left to duplicate
+
     # Shuffle clues within each card
     for card in cards:
         rng.shuffle(card.clues)
@@ -173,11 +193,19 @@ def assign_rounds(
 
         rounds[r1_idx] = 1
 
-        # Remaining clues: randomly assign to rounds 2 and 3
+        # Remaining clues: distribute across rounds 2 and 3,
+        # guaranteeing at least one clue per round when possible
         remaining = murder_idxs + other_idxs
         rng.shuffle(remaining)
-        for idx in remaining:
-            rounds[idx] = rng.choice([2, 3])
+        if len(remaining) >= 2:
+            # Guarantee at least one clue in round 2 and one in round 3
+            rounds[remaining[0]] = 2
+            rounds[remaining[1]] = 3
+            for idx in remaining[2:]:
+                rounds[idx] = rng.choice([2, 3])
+        elif len(remaining) == 1:
+            rounds[remaining[0]] = 2
+        # len == 0: nothing to assign
 
         assignments.append(rounds)
 
