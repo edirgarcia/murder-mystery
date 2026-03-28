@@ -244,7 +244,7 @@ export default function DashboardPage() {
             <div className="mt-4 inline-block rounded-xl bg-white p-3">
               <QRCodeSVG
                 value={`${window.location.origin}/murder-mystery/?join=${code}`}
-                size={180}
+                size={256}
               />
             </div>
             <p className="text-mystery-400 mt-3">

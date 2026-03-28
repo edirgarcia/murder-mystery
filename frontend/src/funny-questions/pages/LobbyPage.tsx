@@ -97,7 +97,7 @@ export default function LobbyPage() {
           <h2 className="text-7xl font-bold text-mystery-300 tracking-[0.3em] mt-1">{code}</h2>
           {state.isHost && (
             <div className="mt-4 inline-block rounded-xl bg-white p-3">
-              <QRCodeSVG value={`${window.location.origin}/funny-questions/?join=${code}`} size={180} />
+              <QRCodeSVG value={`${window.location.origin}/funny-questions/?join=${code}`} size={256} />
             </div>
           )}
           <p className="text-mystery-400 mt-3">

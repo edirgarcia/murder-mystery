@@ -171,7 +171,7 @@ export default function VotePage() {
         <QuestionCard question={state.currentQuestion!} round={state.currentRound} />
 
         {state.votingEndsAt && (
-          <CountdownBar endsAt={state.votingEndsAt} totalSeconds={15} />
+          <CountdownBar endsAt={state.votingEndsAt} totalSeconds={30} />
         )}
 
         {state.shameHolder && <ShameIndicator name={state.shameHolder} />}

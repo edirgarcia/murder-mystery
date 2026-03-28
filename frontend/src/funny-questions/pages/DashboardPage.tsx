@@ -154,34 +154,41 @@ export default function DashboardPage() {
             </p>
           </div>
         )}
-        <div className="max-w-lg mx-auto space-y-6">
+        <div className={`mx-auto space-y-6 ${state.roundPhase === "reveal" ? "max-w-4xl" : "max-w-lg"}`}>
           <div className="text-center">
             <p className="text-mystery-400 text-sm uppercase tracking-wider">Host Dashboard</p>
             <p className="text-mystery-300 text-lg mt-1">Room: {code}</p>
           </div>
 
           {state.roundPhase === "reveal" && state.roundResult ? (
-            <RoundReveal result={state.roundResult} />
-          ) : state.currentQuestion ? (
             <>
-              <QuestionCard question={state.currentQuestion} round={state.currentRound} />
-              {state.votingEndsAt && (
-                <CountdownBar endsAt={state.votingEndsAt} totalSeconds={15} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <RoundReveal result={state.roundResult} />
+                <ScoreBoard scores={state.scores} shameHolder={state.shameHolder} pointsToWin={state.pointsToWin} />
+              </div>
+              {state.hostPaced && !state.winner && (
+                <button
+                  onClick={() => code && state.playerId && nextQuestion(code, state.playerId)}
+                  className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
+                >
+                  Next Question
+                </button>
               )}
             </>
           ) : (
-            <p className="text-center text-mystery-400 animate-pulse">Starting first round...</p>
-          )}
-
-          <ScoreBoard scores={state.scores} shameHolder={state.shameHolder} pointsToWin={state.pointsToWin} />
-
-          {state.roundPhase === "reveal" && state.hostPaced && !state.winner && (
-            <button
-              onClick={() => code && state.playerId && nextQuestion(code, state.playerId)}
-              className="w-full py-4 rounded-xl bg-mystery-500 hover:bg-mystery-400 text-white font-semibold text-lg transition"
-            >
-              Next Question
-            </button>
+            <>
+              {state.currentQuestion ? (
+                <>
+                  <QuestionCard question={state.currentQuestion} round={state.currentRound} />
+                  {state.votingEndsAt && (
+                    <CountdownBar endsAt={state.votingEndsAt} totalSeconds={30} />
+                  )}
+                </>
+              ) : (
+                <p className="text-center text-mystery-400 animate-pulse">Starting first round...</p>
+              )}
+              <ScoreBoard scores={state.scores} shameHolder={state.shameHolder} pointsToWin={state.pointsToWin} />
+            </>
           )}
         </div>
       </div>

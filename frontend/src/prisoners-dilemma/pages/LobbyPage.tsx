@@ -97,7 +97,7 @@ export default function LobbyPage() {
             </div>
             {state.isHost && (
               <div className="rounded-3xl bg-white p-4">
-                <QRCodeSVG value={`${window.location.origin}/prisoners-dilemma/?join=${code}`} size={180} />
+                <QRCodeSVG value={`${window.location.origin}/prisoners-dilemma/?join=${code}`} size={256} />
               </div>
             )}
           </div>
