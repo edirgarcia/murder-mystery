@@ -33,9 +33,9 @@ class TestScoring:
         # p1 and p2 voted for majority → +1 each
         assert result.points["p1"] == 1
         assert result.points["p2"] == 1
-        # p3 got most votes but didn't self-vote → -2
+        # p3 got most votes but didn't self-vote → no penalty
         # p3 voted for p1 (not majority) → no +1
-        assert result.points["p3"] == -2
+        assert result.points["p3"] == 0
 
     def test_self_vote_with_most_votes(self):
         """Self-voting and getting most votes gives +2."""
@@ -48,20 +48,20 @@ class TestScoring:
         assert result.points["p1"] == 1
         assert result.points["p3"] == 1
 
-    def test_most_voted_no_self_vote_penalty(self):
-        """Getting most votes without self-voting gives -2."""
+    def test_most_voted_no_self_vote_no_penalty(self):
+        """Getting most votes without self-voting gives no penalty."""
         votes = {"p1": "p3", "p2": "p3", "p3": "p1"}
         result = score_round(votes, ["p1", "p2", "p3"], None)
         assert result.most_voted == "p3"
-        # p3 didn't self-vote, got most votes → -2
-        assert result.points["p3"] == -2
+        # p3 didn't self-vote, got most votes → no bonus or penalty
+        assert result.points["p3"] == 0
 
     def test_no_vote_penalty(self):
         """Not voting gives -1."""
         votes = {"p1": "p2"}  # only p1 voted
         result = score_round(votes, ["p1", "p2", "p3"], None)
-        # p2 didn't vote (-1) AND got most votes without self-voting (-2) = -3
-        assert result.points["p2"] == -3
+        # p2 didn't vote → -1
+        assert result.points["p2"] == -1
         assert result.points["p3"] == -1
 
     def test_tie_no_majority(self):

@@ -118,8 +118,8 @@ export default function DashboardPage() {
     }
   };
 
-  // Finished
-  if (state.phase === "finished" || state.winner) {
+  // Finished — only after game_over event (let reveal phase play out first)
+  if (state.phase === "finished") {
     return (
       <div className="min-h-screen px-4 py-8">
         <div className="max-w-lg mx-auto space-y-6">

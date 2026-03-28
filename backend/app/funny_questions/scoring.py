@@ -38,7 +38,6 @@ def score_round(
     Scoring rules:
         +1 if you voted for the majority pick
         +2 if you got most votes AND voted for yourself
-        -2 if you got most votes but DIDN'T vote for yourself
         -1 if you didn't vote in time
         Mark of Shame: self-vote but nobody else votes for you → shame
         While shamed, you can't earn points (deltas clamped to <= 0)
@@ -86,14 +85,11 @@ def score_round(
 
         points[pid] = delta
 
-    # Most-voted bonus/penalty
+    # Most-voted bonus
     if most_voted is not None:
         if most_voted in votes and votes[most_voted] == most_voted:
             # Voted for themselves AND got most votes: +2
             points[most_voted] += 2
-        else:
-            # Got most votes but didn't vote for themselves: -2
-            points[most_voted] -= 2
 
     # Mark of Shame logic
     new_shame: str | None = None
