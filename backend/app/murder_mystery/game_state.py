@@ -50,9 +50,9 @@ class MurderStore(GameStore[MurderRoom]):
         player = self.get_player(room, player_id)
         if not player:
             return None
-        idx = room.players.index(player)
-        if idx < len(room.cards):
-            return room.cards[idx]
+        for card in room.cards:
+            if card.character_name == player.name:
+                return card
         return None
 
 
