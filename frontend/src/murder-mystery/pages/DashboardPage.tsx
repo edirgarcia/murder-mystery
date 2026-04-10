@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const { setGame, setPlayers, addPlayer, setPhase, setError, setRoundInfo, setRoundDurations, setMurderWeapon } = useGameActions();
   const [starting, setStarting] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [roundMinutes, setRoundMinutes] = useState(5);
+  const [roundMinutes, setRoundMinutes] = useState(3);
   const [guessesCount, setGuessesCount] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [murderClues, setMurderClues] = useState<ClueInfo[] | null>(null);
@@ -291,7 +291,7 @@ export default function DashboardPage() {
               Round Duration (minutes per round)
             </h3>
             <div className="flex gap-2">
-              {[3, 5, 7].map((m) => (
+              {[2, 3, 5].map((m) => (
                 <button
                   key={m}
                   onClick={() => setRoundMinutes(m)}
