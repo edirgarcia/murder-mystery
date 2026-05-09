@@ -1,86 +1,155 @@
-# Murder Mystery Party Game
+# Nyxx Party Games
 
-A multiplayer party game where players receive clue cards and work together to figure out who committed the murder — and with what weapon.
+A browser-based multiplayer party game platform. One FastAPI backend serves room management, game APIs, WebSockets, and production static files for several React/Vite games.
 
-Each game generates a unique logic puzzle (think Zebra/Einstein puzzle). Clues are distributed across player cards so no one person has the full picture. Players share information verbally, piece together the solution, and make their accusation.
+Players join from their phones with a 4-letter room code or QR link. Hosts run the shared lobby flow, start the game, and use a dashboard view where the game needs one.
+
+## Games
+
+| Game | Local Path | API Prefix | Summary |
+|---|---|---|---|
+| Murder Mystery | `/murder-mystery/` | `/api/mm/games` | Logic-puzzle deduction game where players share clue cards and identify the murderer and weapon. |
+| Funny Questions | `/funny-questions/` | `/api/fq/games` | "Most likely to" voting game with configurable spice levels, scoring, and shame mechanics. |
+| Werewolf | `/werewolf/` | `/api/ww/games` | Social deduction game with hidden roles, night actions, day votes, and live narration. |
+| Prisoner's Dilemma | `/prisoners-dilemma/` | `/api/pd/games` | Team trust/betrayal strategy game with hidden spies and round-by-round accusations. |
 
 ## Quick Start
 
-**Prerequisites:** Python 3.11+, Node.js 18+, [uv](https://docs.astral.sh/uv/)
+Prerequisites:
+
+- Python 3.11+
+- Node.js 20+
+- [uv](https://docs.astral.sh/uv/)
+- npm
+
+Install dependencies:
 
 ```bash
-# Install dependencies
-cd backend && uv sync --dev && cd ..
-cd frontend && npm install && cd ..
+cd backend
+uv sync --dev
 
-# Run both servers
+cd ../frontend
+npm install
+```
+
+Run the backend and frontend together:
+
+```bash
+cd ..
 ./run.sh
 ```
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API docs: http://localhost:8000/docs
+Local URLs:
 
-## How to Play
+- Main menu: `http://localhost:5173/`
+- Murder Mystery: `http://localhost:5173/murder-mystery/`
+- Funny Questions: `http://localhost:5173/funny-questions/`
+- Werewolf: `http://localhost:5173/werewolf/`
+- Prisoner's Dilemma: `http://localhost:5173/prisoners-dilemma/`
+- Backend API docs: `http://localhost:8000/docs`
 
-1. One player creates a game and shares the 4-letter room code
-2. Other players join using the code (4-10 players)
-3. The host starts the game — a puzzle is generated and clue cards are dealt
-4. Each player sees their card with a subset of clues
-5. Talk to each other, share clues, and deduce who has the murder weapon
-6. When ready, each player makes an accusation
-7. Once everyone has guessed, the solution is revealed
+## Running Services Manually
 
-## Running Individually
+Backend:
 
-**Backend:**
 ```bash
 cd backend
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-**Frontend:**
+Frontend:
+
 ```bash
 cd frontend
 npm run dev
 ```
 
-**Tests:**
+## Tests And Checks
+
+Backend tests:
+
 ```bash
 cd backend
 uv run pytest tests/ -v
 ```
 
+Frontend production build:
+
+```bash
+cd frontend
+npm run build
+```
+
+## Architecture
+
+The backend is a single FastAPI app:
+
+- Shared lobby routes create rooms, join players, return game info, and manage common WebSocket connections.
+- Each game owns its own state model, routes, scoring/game loop, and response models.
+- State is in memory. There is no database, so rooms are ephemeral and do not survive process restarts.
+- In production, FastAPI also serves the Vite build output and handles SPA fallbacks for each game path.
+
+The frontend is a multi-entry Vite app:
+
+- `frontend/index.html` is the main menu.
+- Each game has its own HTML entry point and React app under `frontend/src/<game>/`.
+- Shared frontend helpers live under `frontend/src/shared/`.
+- Vite proxies game-prefixed API/WebSocket paths to the backend during development.
+
 ## Project Structure
 
-```
+```text
 backend/
   app/
-    puzzle/       # Puzzle generation engine
-    routes/       # API endpoints + WebSocket
-    config.py     # Player limits, CORS origins
-    game_state.py # In-memory game rooms
-    models.py     # Pydantic request/response models
-    main.py       # FastAPI app entry point
+    main.py                # FastAPI app, routers, production static serving
+    shared/                # Shared lobby, WebSocket, room, and config code
+    murder_mystery/        # Murder Mystery game state, routes, and models
+    funny_questions/       # Funny Questions prompts, scoring, routes, and models
+    werewolf/              # Werewolf roles, game logic, routes, and models
+    prisoners_dilemma/     # Prisoner's Dilemma game logic, routes, and models
+    puzzle/                # Logic puzzle generation engine for Murder Mystery
   tests/
+
 frontend/
+  index.html               # Main menu
+  murder-mystery.html      # Murder Mystery entry point
+  funny-questions.html     # Funny Questions entry point
+  werewolf.html            # Werewolf entry point
+  prisoners-dilemma.html   # Prisoner's Dilemma entry point
   src/
-    pages/        # Home, Lobby, Game, Guess, Result
-    components/   # CharacterCard, ClueList, PlayerList
-    context/      # React context for game state
-    hooks/        # WebSocket hook
-    api/          # HTTP client functions
-    types/        # TypeScript interfaces
+    shared/                # Shared API, context, hooks, components, and types
+    murder-mystery/
+    funny-questions/
+    werewolf/
+    prisoners-dilemma/
+
+docs/
+  architecture.md          # Murder Mystery puzzle engine notes
+  audio.md                 # Audio/narration notes
+  deployment.md            # Azure Container Apps deployment runbook
 ```
 
-See [docs/architecture.md](docs/architecture.md) for a deeper look at how the puzzle engine works.
+## Deployment
+
+Production runs as a single Docker container on Azure Container Apps. The container builds the frontend, installs the backend, and serves both from FastAPI.
+
+Current production routes:
+
+- `https://www.nyxxgames.com/`
+- `https://www.nyxxgames.com/murder-mystery/`
+- `https://www.nyxxgames.com/funny-questions/`
+- `https://www.nyxxgames.com/werewolf/`
+- `https://www.nyxxgames.com/prisoners-dilemma/`
+
+See [docs/deployment.md](docs/deployment.md) for the full build, push, and Azure Container Apps update flow.
 
 ## Tech Stack
 
-| Layer    | Technology                          |
-|----------|-------------------------------------|
-| Backend  | FastAPI, OR-Tools CP-SAT, Pydantic  |
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI, Pydantic, WebSockets, OR-Tools CP-SAT |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS |
-| Realtime | WebSockets (native FastAPI)         |
-| State    | In-memory (ephemeral, no database)  |
-| Packages | uv (Python), npm (JS)               |
+| Package management | uv, npm |
+| Runtime state | In-memory rooms |
+| Production | Docker, Azure Container Apps, Azure Container Registry |
+
