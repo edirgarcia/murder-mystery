@@ -122,7 +122,7 @@ export default function LobbyPage() {
             <div className="bg-mystery-800 rounded-2xl p-4 shadow-xl">
               <h3 className="text-mystery-300 font-semibold mb-3 text-sm">Spice Level</h3>
               <div className="flex gap-2">
-                {[1, 2, 3].map((s) => (
+                {[1, 2, 3, 4].map((s) => (
                   <button
                     key={s}
                     onClick={() => setMaxSpice(s)}
@@ -133,7 +133,7 @@ export default function LobbyPage() {
                         : "bg-mystery-700 text-mystery-400 hover:bg-mystery-600"
                     } disabled:opacity-40`}
                   >
-                    {s === 1 ? "Mild" : s === 2 ? "Spicy" : "Scorching"}
+                    {s === 1 ? "Mild" : s === 2 ? "Medium" : s === 3 ? "Spicy" : "Scorching"}
                   </button>
                 ))}
               </div>

@@ -9,7 +9,7 @@ from ..shared.models import GamePhase, PlayerInfo
 
 class StartFQRequest(BaseModel):
     categories: list[str] | None = None
-    max_spice: int = Field(default=2, ge=1, le=3)
+    max_spice: int = Field(default=2, ge=1, le=4)
     points_to_win: int = Field(default=20, ge=5, le=50)
     host_paced: bool = False
 
