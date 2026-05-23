@@ -23,6 +23,8 @@ function multiSpaFallback(): Plugin {
           req.url = "/werewolf.html";
         } else if (url.startsWith("/prisoners-dilemma")) {
           req.url = "/prisoners-dilemma.html";
+        } else if (url.startsWith("/basta")) {
+          req.url = "/basta.html";
         }
         next();
       });
@@ -44,6 +46,7 @@ export default defineConfig({
         "funny-questions": path.resolve(__dirname, "funny-questions.html"),
         werewolf: path.resolve(__dirname, "werewolf.html"),
         "prisoners-dilemma": path.resolve(__dirname, "prisoners-dilemma.html"),
+        basta: path.resolve(__dirname, "basta.html"),
       },
     },
   },
@@ -68,6 +71,11 @@ export default defineConfig({
         target: "http://localhost:8000",
         ws: true,
         rewrite: (p) => p.replace(/^\/prisoners-dilemma/, ""),
+      },
+      "/basta/api": {
+        target: "http://localhost:8000",
+        ws: true,
+        rewrite: (p) => p.replace(/^\/basta/, ""),
       },
     },
   },
