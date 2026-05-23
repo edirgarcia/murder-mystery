@@ -333,9 +333,19 @@ async def get_card(code: str, x_player_id: str = Header(...)) -> PlayerCardRespo
     clue_dicts = card.to_dict()["clues"]
     clues = []
     for i, c in enumerate(clue_dicts):
-        clue_round = round_assignments[i] if round_assignments else 1
+        clue_round = (
+            round_assignments[i]
+            if round_assignments and i < len(round_assignments)
+            else 1
+        )
         if clue_round <= visible_round:
             clues.append(ClueInfo(type=c["type"], text=c["text"], round=clue_round))
+
+    if not clues and clue_dicts:
+        first_clue = clue_dicts[0]
+        clues.append(
+            ClueInfo(type=first_clue["type"], text=first_clue["text"], round=1)
+        )
 
     return PlayerCardResponse(
         character_name=card.character_name,

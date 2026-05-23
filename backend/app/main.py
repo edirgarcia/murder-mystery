@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 
@@ -30,6 +29,10 @@ from .prisoners_dilemma.config import MAX_PLAYERS as PD_MAX_PLAYERS
 from .prisoners_dilemma.game_state import store as pd_store
 from .prisoners_dilemma.info import build_game_info as pd_build_game_info
 from .prisoners_dilemma.routes import game as pd_game
+from .basta.config import MAX_PLAYERS as BA_MAX_PLAYERS
+from .basta.game_state import store as ba_store
+from .basta.info import build_game_info as ba_build_game_info
+from .basta.routes import game as ba_game
 
 app = FastAPI(title="Party Games Platform", version="0.2.0")
 
@@ -37,7 +40,7 @@ app = FastAPI(title="Party Games Platform", version="0.2.0")
 # (Vite dev proxy strips the game prefix; this middleware does the same in prod.)
 # Must be a raw ASGI middleware so it applies to both HTTP and WebSocket connections.
 _GAME_PREFIX_RE = re.compile(
-    r"^/(murder-mystery|funny-questions|werewolf|prisoners-dilemma)(/api/.*)"
+    r"^/(murder-mystery|funny-questions|werewolf|prisoners-dilemma|basta)(/api/.*)"
 )
 
 
@@ -95,6 +98,13 @@ app.include_router(pd_lobby)
 app.include_router(pd_game.router)
 app.include_router(pd_ws)
 
+# --- Basta ---
+ba_lobby = create_lobby_router(ba_store, BA_MAX_PLAYERS, ba_build_game_info, "/api/ba/games")
+ba_ws = create_ws_router(ba_store, "/api/ba/games")
+app.include_router(ba_lobby)
+app.include_router(ba_game.router)
+app.include_router(ba_ws)
+
 
 @app.get("/api/health")
 async def health() -> dict:
@@ -111,6 +121,7 @@ if STATIC_DIR.is_dir():
         "funny-questions": "funny-questions.html",
         "werewolf": "werewolf.html",
         "prisoners-dilemma": "prisoners-dilemma.html",
+        "basta": "basta.html",
     }
 
     @app.get("/")
