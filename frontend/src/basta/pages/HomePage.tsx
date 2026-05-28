@@ -60,7 +60,7 @@ export default function HomePage() {
             Word race
           </p>
           <h1 className="mt-2 text-6xl font-black leading-none text-mystery-100">
-            Basta
+            Basta ✏️
           </h1>
         </div>
 

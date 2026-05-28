@@ -70,6 +70,7 @@
   {"text": "Who would give up 30 years of their life to become a billionaire?", "category": "future", "spice_level": 2},
   {"text": "Who takes naps the most often?", "category": "lifestyle", "spice_level": 1},
   {"text": "Who enjoys horror movies the most?", "category": "lifestyle", "spice_level": 1},
+  {"text": "Who would die first in a horror movie?", "category": "lifestyle", "spice_level": 1},
   {"text": "Who enjoys Disney movies the most?", "category": "lifestyle", "spice_level": 1},
   {"text": "Who enjoys new technology the most?", "category": "skills", "spice_level": 1},
   {"text": "Who speaks the most languages?", "category": "skills", "spice_level": 1},
@@ -177,5 +178,16 @@
   {"text": "Who has the best eyesight?", "category": "skills", "spice_level": 1},
   {"text": "Who has the worst eyesight?", "category": "skills", "spice_level": 1},
   {"text": "Who has the best handwriting?", "category": "skills", "spice_level": 1},
-  {"text": "Who has the worst handwriting?", "category": "skills", "spice_level": 1}
+  {"text": "Who has the worst handwriting?", "category": "skills", "spice_level": 1},
+  {"text": "Who's most likely to help bail you out of jail?", "category": "loyalty", "spice_level": 1},
+  {"text": "Who would lose a fight with an elderly person?", "category": "personality", "spice_level": 2},
+  {"text": "Who's got the most rizz?", "category": "relationships", "spice_level": 1},
+  {"text": "Who's most likely to be in a situationship?", "category": "relationships", "spice_level": 2},
+  {"text": "Who's always late?", "category": "lifestyle", "spice_level": 1},
+  {"text": "Who's the funniest?", "category": "personality", "spice_level": 1},
+  {"text": "Who would you trust with your children?", "category": "loyalty", "spice_level": 1},
+  {"text": "Who would you not trust with your children?", "category": "loyalty", "spice_level": 2},
+  {"text": "Who made their family proud?", "category": "personality", "spice_level": 2},
+  {"text": "Who disappointed their family?", "category": "secrets", "spice_level": 3},
+  {"text": "Who has the worst taste in partners?", "category": "relationships", "spice_level": 3}
 ]

@@ -59,7 +59,7 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <p className="text-mystery-400 uppercase tracking-wider text-sm">Party Mode</p>
-          <h1 className="text-5xl text-mystery-100 font-bold">Werewolf</h1>
+          <h1 className="text-5xl text-mystery-100 font-bold">Lobo 🐺</h1>
           <p className="text-mystery-300 mt-2">Read faces, hide lies, survive the night.</p>
         </div>
 

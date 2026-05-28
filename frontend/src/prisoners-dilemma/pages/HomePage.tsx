@@ -59,9 +59,7 @@ export default function HomePage() {
           <section className="space-y-5">
             <p className="text-sm uppercase tracking-[0.35em] text-mystery-300">Social Strategy</p>
             <h1 className="max-w-xl text-5xl font-bold leading-tight text-white md:text-6xl">
-              Trust your team.
-              <br />
-              Doubt everyone.
+              Double Trust 🤝
             </h1>
             <p className="max-w-xl text-lg leading-8 text-mystery-200">
               Players join on their phones, get split into red and blue teams, then vote to
