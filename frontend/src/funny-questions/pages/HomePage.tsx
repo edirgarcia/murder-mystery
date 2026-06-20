@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createGame, joinGame, getGameInfo } from "../api/http";
 import { useFQActions } from "../context/GameContext";
+import { saveSession } from "@shared/session";
+import HostLeftBanner from "@shared/components/HostLeftBanner";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,9 +20,7 @@ export default function HomePage() {
     setError("");
     try {
       const { code, host_id } = await createGame(hostName);
-      localStorage.setItem("fq_player_id", host_id);
-      localStorage.setItem("fq_game_code", code);
-      localStorage.setItem("fq_is_host", "true");
+      saveSession("fq", { playerId: host_id, code, isHost: true });
       setGame(code, host_id, hostName, true);
       navigate(`/lobby/${code}`);
     } catch (e: any) {
@@ -38,9 +38,7 @@ export default function HomePage() {
     try {
       const code = joinCode.trim().toUpperCase();
       const { player_id } = await joinGame(code, name.trim());
-      localStorage.setItem("fq_player_id", player_id);
-      localStorage.setItem("fq_game_code", code);
-      localStorage.setItem("fq_is_host", "false");
+      saveSession("fq", { playerId: player_id, code, isHost: false });
       setGame(code, player_id, name.trim(), false);
       const info = await getGameInfo(code);
       setPlayers(info.players);
@@ -55,6 +53,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">
+        <HostLeftBanner />
         <div className="text-center">
           <h1 className="text-5xl font-bold text-mystery-300 mb-2">
             Callout 😂

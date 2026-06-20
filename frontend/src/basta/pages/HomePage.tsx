@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createGame, getGameInfo, joinGame } from "../api/http";
 import { useBastaActions } from "../context/GameContext";
+import { saveSession } from "@shared/session";
+import HostLeftBanner from "@shared/components/HostLeftBanner";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,9 +20,7 @@ export default function HomePage() {
     setError("");
     try {
       const { code, host_id } = await createGame(hostName);
-      localStorage.setItem("ba_player_id", host_id);
-      localStorage.setItem("ba_game_code", code);
-      localStorage.setItem("ba_is_host", "true");
+      saveSession("ba", { playerId: host_id, code, isHost: true });
       setGame(code, host_id, hostName, true);
       navigate(`/lobby/${code}`);
     } catch (e: any) {
@@ -38,9 +38,7 @@ export default function HomePage() {
     try {
       const code = joinCode.trim().toUpperCase();
       const { player_id } = await joinGame(code, name.trim());
-      localStorage.setItem("ba_player_id", player_id);
-      localStorage.setItem("ba_game_code", code);
-      localStorage.setItem("ba_is_host", "false");
+      saveSession("ba", { playerId: player_id, code, isHost: false });
       setGame(code, player_id, name.trim(), false);
       const info = await getGameInfo(code);
       setPlayers(info.players);
@@ -55,6 +53,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen px-4 py-10">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md flex-col justify-center space-y-6">
+        <HostLeftBanner />
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-amber-200">
             Word race

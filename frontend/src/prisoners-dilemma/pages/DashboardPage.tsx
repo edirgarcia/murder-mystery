@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { buildWsUrl, getGameInfo } from "../api/http";
-import { usePD, usePDActions } from "../context/GameContext";
+import { usePD, usePDActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import CountdownBar from "../components/CountdownBar";
+import SkipIntroButton from "@shared/components/SkipIntroButton";
 import type { WSEvent } from "@shared/types/game";
 import type { AccusationResult, PDPlayerInfo, RoundResult, TeamColor } from "../types/game";
 
@@ -42,7 +43,6 @@ export default function DashboardPage() {
     accusationStarted,
     roundStarted,
     setAccusationResult,
-    setGame,
     setPhase,
     setPlayers,
     setRoundResult,
@@ -52,15 +52,9 @@ export default function DashboardPage() {
   } = usePDActions();
   const [narrationText, setNarrationText] = useState<string | null>(null);
   const sendAckRef = useRef<() => void>(() => {});
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("pd_player_id");
-    const storedCode = localStorage.getItem("pd_game_code");
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "Host", true);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;
@@ -94,6 +88,7 @@ export default function DashboardPage() {
           const sound = event.data.sound as string | undefined;
           if (sound) {
             const audio = new Audio(`/prisoners-dilemma/audio/${sound}`);
+            introAudioRef.current = audio;
             audio.onended = () => sendAckRef.current();
             audio.onerror = () => sendAckRef.current();
             audio.play().catch(() => sendAckRef.current());
@@ -155,6 +150,17 @@ export default function DashboardPage() {
     }
   };
 
+  const skipIntro = () => {
+    if (introAudioRef.current) {
+      introAudioRef.current.pause();
+      introAudioRef.current = null;
+    }
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "skip_intro" }));
+    }
+  };
+
   const redPlayers = state.players.filter((player) => player.team === "red");
   const bluePlayers = state.players.filter((player) => player.team === "blue");
 
@@ -165,6 +171,7 @@ export default function DashboardPage() {
           <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
             {narrationText}
           </p>
+          {narrationText && <SkipIntroButton onSkip={skipIntro} />}
         </div>
       )}
       <div className="mx-auto max-w-6xl space-y-6">

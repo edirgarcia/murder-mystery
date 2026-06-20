@@ -1,12 +1,13 @@
 import { useEffect, useCallback, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { useGame, useGameActions } from "../context/GameContext";
+import { useGame, useGameActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getGameInfo, startGame, advanceRound, endGame, getResults, resetGame, buildWsUrl } from "../api/http";
 import type { Difficulty, LeaderboardEntry, ClueInfo } from "../types/game";
 import type { WSEvent } from "@shared/types/game";
 import PlayerList from "@shared/components/PlayerList";
+import SkipIntroButton from "@shared/components/SkipIntroButton";
 
 function CountdownTimer({ startedAt, durationSeconds }: { startedAt: string; durationSeconds: number }) {
   const [remaining, setRemaining] = useState(durationSeconds);
@@ -39,31 +40,31 @@ export default function DashboardPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setGame, setPlayers, addPlayer, setPhase, setError, setRoundInfo, setRoundDurations, setMurderWeapon } = useGameActions();
+  const { setPlayers, addPlayer, setPhase, setError, setRoundInfo, setRoundDurations, setMurderWeapon } = useGameActions();
   const [starting, setStarting] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [roundMinutes, setRoundMinutes] = useState(3);
+  const [traitorMode, setTraitorMode] = useState(false);
   const [guessesCount, setGuessesCount] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null);
   const [murderClues, setMurderClues] = useState<ClueInfo[] | null>(null);
   const [murdererName, setMurdererName] = useState<string | null>(null);
+  const [traitorOutcome, setTraitorOutcome] = useState<{
+    caught: boolean;
+    correct: number;
+    total: number;
+  } | null>(null);
   const [murderWeaponLocal, setMurderWeaponLocal] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
   const [roundStartedAt, setRoundStartedAt] = useState<string | null>(null);
   const [roundDurationSeconds, setRoundDurationSeconds] = useState<number | null>(null);
   const [narrationText, setNarrationText] = useState<string | null>(null);
   const sendAckRef = useRef<() => void>(() => {});
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
   const loadedRef = useRef(false);
 
-  // Restore game state from localStorage (handles page refresh / HMR)
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("player_id");
-    const storedCode = localStorage.getItem("game_code");
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "Host", true);
-    }
-  }, [code, state.playerId, setGame]);
+  // Restore identity from localStorage (handles page refresh / HMR)
+  useRestoreSession(code);
 
   // Load game info on mount
   useEffect(() => {
@@ -119,6 +120,7 @@ export default function DashboardPage() {
           const sound = event.data.sound as string | undefined;
           if (sound) {
             const audio = new Audio(`/murder-mystery/audio/${sound}`);
+            introAudioRef.current = audio;
             audio.onended = () => sendAckRef.current();
             audio.onerror = () => sendAckRef.current();
             audio.play().catch(() => sendAckRef.current());
@@ -165,6 +167,13 @@ export default function DashboardPage() {
               setMurderClues(results.murder_clues);
               setMurderWeaponLocal(results.murder_weapon);
               if (!lb) setLeaderboard(results.leaderboard);
+              if (results.traitor_mode) {
+                setTraitorOutcome({
+                  caught: results.murderer_caught === true,
+                  correct: results.detectives_correct ?? 0,
+                  total: results.detectives_total ?? 0,
+                });
+              }
             });
           }
           break;
@@ -177,6 +186,7 @@ export default function DashboardPage() {
           setMurderClues(null);
           setMurdererName(null);
           setMurderWeaponLocal(null);
+          setTraitorOutcome(null);
           setCurrentRound(0);
           setRoundStartedAt(null);
           setRoundDurationSeconds(null);
@@ -197,11 +207,22 @@ export default function DashboardPage() {
     }
   };
 
+  const skipIntro = () => {
+    if (introAudioRef.current) {
+      introAudioRef.current.pause();
+      introAudioRef.current = null;
+    }
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "skip_intro" }));
+    }
+  };
+
   async function handleStart() {
     if (!code || !state.playerId) return;
     setStarting(true);
     try {
-      await startGame(code, state.playerId, difficulty, roundMinutes);
+      await startGame(code, state.playerId, difficulty, roundMinutes, traitorMode);
     } catch (e: any) {
       setError(e.message);
       setStarting(false);
@@ -308,6 +329,34 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          <div className="bg-mystery-800 rounded-2xl p-4 shadow-xl">
+            <button
+              onClick={() => setTraitorMode((v) => !v)}
+              disabled={starting}
+              className="flex w-full items-center justify-between gap-3 text-left disabled:opacity-40"
+            >
+              <span>
+                <span className="block text-mystery-300 font-semibold text-sm">
+                  Traitor mode
+                </span>
+                <span className="block text-mystery-400 text-xs mt-1">
+                  The murderer is told who they are and bluffs to avoid being caught.
+                </span>
+              </span>
+              <span
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${
+                  traitorMode ? "bg-red-600" : "bg-mystery-600"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
+                    traitorMode ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
+            </button>
+          </div>
+
           <button
             onClick={handleStart}
             disabled={!canStart}
@@ -337,6 +386,7 @@ export default function DashboardPage() {
             <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
               {narrationText}
             </p>
+            {narrationText && <SkipIntroButton onSkip={skipIntro} />}
           </div>
         )}
         <div className="w-full max-w-lg space-y-8">
@@ -412,6 +462,26 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-lg mx-auto space-y-6">
+        {traitorOutcome && (
+          <div
+            className={`rounded-2xl p-6 text-center border ${
+              traitorOutcome.caught
+                ? "bg-green-950/40 border-green-700/60"
+                : "bg-red-950/40 border-red-700/60"
+            }`}
+          >
+            <h2
+              className={`text-4xl font-bold ${
+                traitorOutcome.caught ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {traitorOutcome.caught ? "⚖️ Caught!" : "🔪 The murderer got away!"}
+            </h2>
+            <p className="text-mystery-300 mt-2">
+              Fooled {traitorOutcome.total - traitorOutcome.correct} of {traitorOutcome.total} detectives.
+            </p>
+          </div>
+        )}
         {murdererName && (
           <div className="bg-mystery-800 rounded-2xl p-6 text-center">
             <p className="text-mystery-400 text-sm uppercase tracking-wider">

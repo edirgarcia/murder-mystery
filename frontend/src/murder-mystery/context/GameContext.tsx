@@ -6,6 +6,7 @@ import {
   type ReactNode,
   type Dispatch,
 } from "react";
+import { useSessionRestore } from "@shared/hooks/useRestoreSession";
 import type { GamePhase, PlayerInfo } from "@shared/types/game";
 import type { PlayerCard, LeaderboardEntry } from "../types/game";
 
@@ -152,6 +153,20 @@ export function useGame() {
   const ctx = useContext(GameContext);
   if (!ctx) throw new Error("useGame must be used within GameProvider");
   return ctx;
+}
+
+/**
+ * Restore the player's identity from localStorage after a page refresh.
+ *
+ * Without this, a player who refreshes (or whose tab reloads) while on an
+ * in-game page loses `state.playerId`, so the WebSocket URL becomes null and
+ * they can never reconnect. Mirrors the restore logic in LobbyPage; safe to
+ * call on every player-facing page.
+ */
+export function useRestoreSession(code: string | undefined) {
+  const { state } = useGame();
+  const { setGame } = useGameActions();
+  useSessionRestore("mm", code, state.playerId, setGame);
 }
 
 export function useGameActions() {

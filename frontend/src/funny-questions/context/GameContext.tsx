@@ -7,6 +7,7 @@ import {
   type Dispatch,
 } from "react";
 import type { GamePhase, PlayerInfo } from "@shared/types/game";
+import { useSessionRestore } from "@shared/hooks/useRestoreSession";
 import type { RoundResult } from "../types/game";
 
 interface FQState {
@@ -211,4 +212,10 @@ export function useFQActions() {
     reset: useCallback(() => dispatch({ type: "RESET" }), [dispatch]),
     resetGame: useCallback(() => dispatch({ type: "RESET_GAME" }), [dispatch]),
   };
+}
+
+export function useRestoreSession(code: string | undefined) {
+  const { state } = useFQ();
+  const { setGame } = useFQActions();
+  useSessionRestore("fq", code, state.playerId, setGame);
 }

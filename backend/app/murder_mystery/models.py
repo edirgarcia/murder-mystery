@@ -20,6 +20,7 @@ class Difficulty(str, Enum):
 class StartGameRequest(BaseModel):
     difficulty: Difficulty = Difficulty.MEDIUM
     round_minutes: int = Field(default=5, ge=1, le=15)
+    traitor_mode: bool = False
 
 
 class GuessRequest(BaseModel):
@@ -52,6 +53,7 @@ class ClueInfo(BaseModel):
 class PlayerCardResponse(BaseModel):
     character_name: str
     clues: list[ClueInfo]
+    is_murderer: bool = False
 
 
 class GuessResponse(BaseModel):
@@ -72,3 +74,7 @@ class ResultsResponse(BaseModel):
     murder_weapon: str
     leaderboard: list[LeaderboardEntry]
     murder_clues: list[ClueInfo]
+    traitor_mode: bool = False
+    murderer_caught: bool | None = None
+    detectives_correct: int = 0
+    detectives_total: int = 0

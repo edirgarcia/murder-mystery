@@ -124,8 +124,12 @@ async def _run_fq_intro(room) -> None:
             ),
             ("Let the games begin!", "fq-begin.mp3"),
         ]
+        room.skip_intro = asyncio.Event()
         for text, sound in narration:
+            if room.skip_intro.is_set():
+                break
             await _fq_narrate(room, text, sound)
+        room.skip_intro = None
 
         # Clear the overlay before starting gameplay
         await broadcast(room, "intro_done", {})

@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGame, useGameActions } from "../context/GameContext";
+import { useGame, useGameActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getCard, getGameInfo, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
@@ -15,6 +15,9 @@ export default function GamePage() {
   const [loading, setLoading] = useState(true);
   const [currentRound, setCurrentRound] = useState(0);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Restore identity from localStorage so a mid-game refresh can reconnect
+  useRestoreSession(code);
 
   // Redirect hosts to dashboard
   useEffect(() => {
@@ -108,10 +111,19 @@ export default function GamePage() {
   }
 
   const canAccuse = currentRound >= 2;
+  const isMurderer = state.card.is_murderer === true;
 
   return (
     <div className="min-h-screen px-4 py-6">
       <div className="max-w-md mx-auto space-y-6">
+        {isMurderer && (
+          <div className="rounded-xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-center">
+            <p className="text-red-300 text-sm font-semibold">🔪 You are the murderer</p>
+            <p className="text-red-200/70 text-xs mt-1">
+              Only you can see this. Blend in, sow doubt, and don't get caught.
+            </p>
+          </div>
+        )}
         {notification && (
           <div className="bg-mystery-500/80 text-white text-center py-3 px-4 rounded-xl text-sm font-medium animate-pulse">
             {notification}
@@ -135,11 +147,20 @@ export default function GamePage() {
             Talk to other players to share clues!
           </p>
           <p className="text-mystery-300 text-sm">
-            Figure out who committed the murder with the {state.murderWeapon ?? "mystery weapon"}.
+            {isMurderer
+              ? `Everyone is hunting for who used the ${state.murderWeapon ?? "mystery weapon"}. Keep them off your trail.`
+              : `Figure out who committed the murder with the ${state.murderWeapon ?? "mystery weapon"}.`}
           </p>
         </div>
 
-        {canAccuse ? (
+        {isMurderer ? (
+          <div className="rounded-xl bg-red-950/40 border border-red-800/60 py-4 text-center">
+            <p className="text-red-200 text-sm">
+              You don't accuse — you survive. The others vote; if most of them
+              miss you, you win.
+            </p>
+          </div>
+        ) : canAccuse ? (
           <button
             onClick={() => navigate(`/guess/${code}`)}
             className="w-full py-4 rounded-xl bg-red-700 hover:bg-red-600 text-white font-semibold text-lg transition"

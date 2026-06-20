@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { GamePhase } from "@shared/types/game";
+import { useSessionRestore } from "@shared/hooks/useRestoreSession";
 import type {
   AccusationResult,
   GameOverData,
@@ -206,6 +207,12 @@ export function usePD() {
   const ctx = useContext(PDContext);
   if (!ctx) throw new Error("usePD must be used within PDProvider");
   return ctx;
+}
+
+export function useRestoreSession(code: string | undefined) {
+  const { state } = usePD();
+  const { setGame } = usePDActions();
+  useSessionRestore("pd", code, state.playerId, setGame);
 }
 
 export function usePDActions() {

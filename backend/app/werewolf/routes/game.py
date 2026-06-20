@@ -578,8 +578,12 @@ async def _run_game(room: WerewolfRoom) -> None:
             ("I will be your narrator.", "narrator.mp3"),
             ("Please follow my instructions carefully, and remember no talking during the night phases.", "instructions.mp3"),
         ]
+        room.skip_intro = asyncio.Event()
         for text, sound in narration:
+            if room.skip_intro.is_set():
+                break
             await _narrate(room, text, sound)
+        room.skip_intro = None
 
         # --- Role reveal (overlay clears so players can see their role card) ---
         await _narrate(room, "Look at your phone now... to discover your secret role.", "role-reveal.mp3", clear_overlay=True)

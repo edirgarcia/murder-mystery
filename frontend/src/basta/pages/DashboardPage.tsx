@@ -7,7 +7,7 @@ import CountdownBar from "../components/CountdownBar";
 import ReviewCategoryPanel from "../components/ReviewCategoryPanel";
 import RoundResultTable from "../components/RoundResultTable";
 import ScoreBoard from "../components/ScoreBoard";
-import { useBasta, useBastaActions } from "../context/GameContext";
+import { useBasta, useBastaActions, useRestoreSession } from "../context/GameContext";
 import type { RoundResult } from "../types/game";
 
 export default function DashboardPage() {
@@ -15,7 +15,6 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { state } = useBasta();
   const {
-    setGame,
     setPhase,
     setPlayers,
     newRound,
@@ -30,14 +29,7 @@ export default function DashboardPage() {
     resetGame: resetGameState,
   } = useBastaActions();
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ba_player_id");
-    const storedCode = localStorage.getItem("ba_game_code");
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "Host", true);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

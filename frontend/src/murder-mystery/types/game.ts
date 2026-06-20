@@ -28,6 +28,7 @@ export interface ClueInfo {
 export interface PlayerCard {
   character_name: string;
   clues: ClueInfo[];
+  is_murderer?: boolean;
 }
 
 export interface GuessResponse {
@@ -48,4 +49,8 @@ export interface ResultsResponse {
   murder_weapon: string;
   leaderboard: LeaderboardEntry[];
   murder_clues: ClueInfo[];
+  traitor_mode?: boolean;
+  murderer_caught?: boolean | null;
+  detectives_correct?: number;
+  detectives_total?: number;
 }

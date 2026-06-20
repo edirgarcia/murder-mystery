@@ -6,6 +6,7 @@ is lost on server restart, which is fine for a party game.
 
 from __future__ import annotations
 
+import asyncio
 import random
 import string
 from dataclasses import dataclass, field
@@ -31,6 +32,10 @@ class BaseGameRoom:
     players: list[Player] = field(default_factory=list)
     # WebSocket connections: {client_id: WebSocket}
     connections: dict[str, WebSocket] = field(default_factory=dict)
+    # Set while intro narration is running; .set() to skip the remaining lines
+    skip_intro: asyncio.Event | None = None
+    # Pending teardown when the host disconnects (cancelled if host reconnects)
+    host_teardown_task: asyncio.Task | None = None
 
 
 class GameStore[T: BaseGameRoom]:
@@ -56,6 +61,9 @@ class GameStore[T: BaseGameRoom]:
 
     def get_room(self, code: str) -> T | None:
         return self._rooms.get(code.upper())
+
+    def delete_room(self, code: str) -> None:
+        self._rooms.pop(code.upper(), None)
 
     def set_host(self, room: T, name: str) -> str:
         host_id = f"h_{random.randint(10000, 99999)}"

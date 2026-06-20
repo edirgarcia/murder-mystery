@@ -2,23 +2,15 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getGameInfo, resetGame } from "../api/http";
 import ScoreBoard from "../components/ScoreBoard";
-import { useBasta, useBastaActions } from "../context/GameContext";
+import { useBasta, useBastaActions, useRestoreSession } from "../context/GameContext";
 
 export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useBasta();
-  const { setGame, setPhase, setPlayers, setScores, setWinner } = useBastaActions();
+  const { setPhase, setPlayers, setScores, setWinner } = useBastaActions();
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ba_player_id");
-    const storedCode = localStorage.getItem("ba_game_code");
-    const isHost = localStorage.getItem("ba_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

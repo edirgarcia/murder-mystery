@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import type { WSEvent } from "../types/game";
+import { HOST_LEFT_NOTICE_KEY } from "../constants";
 
 type EventHandler = (event: WSEvent) => void;
 
@@ -7,6 +9,7 @@ export function useWebSocket(
   wsUrl: string | null,
   onEvent: EventHandler
 ) {
+  const navigate = useNavigate();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const intentionalClose = useRef(false);
@@ -33,6 +36,16 @@ export function useWebSocket(
     ws.onmessage = (e) => {
       try {
         const event: WSEvent = JSON.parse(e.data);
+        if (event.event === "host_left") {
+          // Host ended the game — stop reconnecting and return to the home
+          // page with a notice. (Host pages never receive this event.)
+          intentionalClose.current = true;
+          clearTimeout(reconnectTimer.current);
+          ws.close();
+          sessionStorage.setItem(HOST_LEFT_NOTICE_KEY, "1");
+          navigate("/");
+          return;
+        }
         if (event.event !== "pong") {
           onEventRef.current(event);
         }
@@ -51,7 +64,7 @@ export function useWebSocket(
     ws.onerror = () => {
       ws.close();
     };
-  }, [wsUrl]);
+  }, [wsUrl, navigate]);
 
   useEffect(() => {
     connect();

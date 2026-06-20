@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { WSEvent } from "@shared/types/game";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { buildWsUrl, getPlayerState, sendWolfPreselection, submitNightAction, submitVote } from "../api/http";
-import { useWW, useWWActions } from "../context/GameContext";
+import { useWW, useWWActions, useRestoreSession } from "../context/GameContext";
 import CountdownBar from "../components/CountdownBar";
 import DayVote from "../components/DayVote";
 import NightAction from "../components/NightAction";
@@ -28,7 +28,6 @@ export default function PlayerPage() {
   const navigate = useNavigate();
   const { state } = useWW();
   const {
-    setGame,
     setPhase,
     setPlayers,
     setPrivate,
@@ -104,15 +103,7 @@ export default function PlayerPage() {
     [setLastDeaths, setPhase, setPhaseDetail, setPlayers, setPrivate, setWinner, setWolfPack, setWolfPreselection]
   );
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ww_player_id");
-    const storedCode = localStorage.getItem("ww_game_code");
-    const isHost = localStorage.getItem("ww_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code || !state.playerId) return;

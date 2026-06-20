@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { buildWsUrl, getGameInfo, getPrivateState, submitAccusation, submitVote } from "../api/http";
-import { usePD, usePDActions } from "../context/GameContext";
+import { usePD, usePDActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import CountdownBar from "../components/CountdownBar";
 import type { WSEvent } from "@shared/types/game";
@@ -46,7 +46,6 @@ export default function PlayerPage() {
     setAccusationResult,
     setAccused,
     setError,
-    setGame,
     setPhase,
     setPlayers,
     setPrivateState,
@@ -63,15 +62,7 @@ export default function PlayerPage() {
   const [submittingAccusation, setSubmittingAccusation] = useState(false);
   const [roleRevealed, setRoleRevealed] = useState(false);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("pd_player_id");
-    const storedCode = localStorage.getItem("pd_game_code");
-    const isHost = localStorage.getItem("pd_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

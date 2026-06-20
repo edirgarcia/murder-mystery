@@ -146,6 +146,70 @@ def distribute_clues(
     return cards
 
 
+def rebalance_cards_for_traitor(
+    cards: list[PlayerCard],
+    murder_clues: list[Clue],
+    murderer_name: str,
+    rng: random.Random | None = None,
+) -> None:
+    """Strip the murder-chain clues from the murderer's own card (Traitor mode).
+
+    The murderer already knows they're guilty, so they must never hold a clue
+    that points to the solution -- that way they can bluff freely while sharing
+    only innocuous clues. Any murder clue that lived solely on the murderer's
+    card is relocated to a detective card so the chain stays complete and the
+    detectives can still solve it. Mutates ``cards`` in place.
+    """
+    rng = rng or random.Random()
+    murder_texts = {c.render() for c in murder_clues}
+
+    murderer_card = next(
+        (c for c in cards if c.character_name == murderer_name), None
+    )
+    if murderer_card is None:
+        return
+    detective_cards = [c for c in cards if c is not murderer_card]
+    if not detective_cards:
+        return
+
+    # Remove every murder clue from the murderer's card.
+    murderer_card.clues = [
+        c for c in murderer_card.clues if c.render() not in murder_texts
+    ]
+
+    # Guarantee each murder clue still appears on at least one detective card.
+    for clue in murder_clues:
+        text = clue.render()
+        if any(
+            any(existing.render() == text for existing in dc.clues)
+            for dc in detective_cards
+        ):
+            continue
+        target = min(detective_cards, key=lambda dc: len(dc.clues))
+        target.clues.append(clue)
+
+    # Backfill the murderer's card to at least 3 innocuous clues for cover.
+    existing_texts = {c.render() for c in murderer_card.clues}
+    if len(murderer_card.clues) < 3:
+        donors = [
+            c
+            for dc in detective_cards
+            for c in dc.clues
+            if c.render() not in murder_texts and c.render() not in existing_texts
+        ]
+        rng.shuffle(donors)
+        for clue in donors:
+            if len(murderer_card.clues) >= 3:
+                break
+            if clue.render() in existing_texts:
+                continue
+            murderer_card.clues.append(clue)
+            existing_texts.add(clue.render())
+
+    for card in cards:
+        rng.shuffle(card.clues)
+
+
 def assign_rounds(
     cards: list[PlayerCard],
     murder_clues: list[Clue],
