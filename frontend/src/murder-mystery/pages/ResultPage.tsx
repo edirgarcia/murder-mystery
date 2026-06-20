@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGame, useGameActions } from "../context/GameContext";
+import { useGame, useGameActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getResults, buildWsUrl } from "../api/http";
 import type { ResultsResponse } from "../types/game";
@@ -13,6 +13,9 @@ export default function ResultPage() {
   const { setPhase, resetGameState } = useGameActions();
   const [results, setResults] = useState<ResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Restore identity from localStorage so a refresh keeps the live connection
+  useRestoreSession(code);
 
   const handleWSEvent = useCallback(
     (event: WSEvent) => {
@@ -57,6 +60,26 @@ export default function ResultPage() {
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-md mx-auto space-y-6">
+        {results.traitor_mode && (
+          <div
+            className={`rounded-2xl p-6 text-center border ${
+              results.murderer_caught
+                ? "bg-green-950/40 border-green-700/60"
+                : "bg-red-950/40 border-red-700/60"
+            }`}
+          >
+            <h2
+              className={`text-3xl font-bold ${
+                results.murderer_caught ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {results.murderer_caught ? "⚖️ Caught!" : "🔪 The murderer got away!"}
+            </h2>
+            <p className="text-mystery-300 text-sm mt-2">
+              {results.murderer_name} fooled {(results.detectives_total ?? 0) - (results.detectives_correct ?? 0)} of {results.detectives_total ?? 0} detectives.
+            </p>
+          </div>
+        )}
         <div className="bg-mystery-800 rounded-2xl p-6 text-center">
           <p className="text-mystery-400 text-sm uppercase tracking-wider">
             The Murderer

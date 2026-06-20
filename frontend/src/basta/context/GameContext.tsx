@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { GamePhase, PlayerInfo } from "@shared/types/game";
+import { useSessionRestore } from "@shared/hooks/useRestoreSession";
 import type { ReviewCategory, RoundResult } from "../types/game";
 
 interface BastaState {
@@ -219,6 +220,12 @@ export function useBasta() {
   const ctx = useContext(BastaContext);
   if (!ctx) throw new Error("useBasta must be used within BastaProvider");
   return ctx;
+}
+
+export function useRestoreSession(code: string | undefined) {
+  const { state } = useBasta();
+  const { setGame } = useBastaActions();
+  useSessionRestore("ba", code, state.playerId, setGame);
 }
 
 export function useBastaActions() {

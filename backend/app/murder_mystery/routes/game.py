@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Header
@@ -27,11 +28,33 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/mm/games", tags=["mm-game"])
 
 
+def _traitor_outcome(room) -> tuple[bool, int, int]:
+    """Return (murderer_caught, detectives_correct, detectives_total).
+
+    The murderer is "caught" only if a strict majority of detectives correctly
+    accuse them -- so the murderer just needs to keep correct guesses under half.
+    """
+    detectives = [p for p in room.players if p.id != room.murderer_player_id]
+    total = len(detectives)
+    correct = sum(
+        1
+        for p in detectives
+        if (g := room.guesses.get(p.id)) and g.suspect_name == room.murderer_name
+    )
+    caught = correct * 2 > total
+    return caught, correct, total
+
+
 def _build_leaderboard(room) -> list[LeaderboardEntry]:
-    """Build a sorted leaderboard: correct+fastest first, then incorrect, then no-guess."""
+    """Build a sorted leaderboard: correct+fastest first, then incorrect, then no-guess.
+
+    In traitor mode the murderer doesn't guess and is omitted from the board.
+    """
     entries: list[LeaderboardEntry] = []
 
     for player in room.players:
+        if room.traitor_mode and player.id == room.murderer_player_id:
+            continue
         guess = room.guesses.get(player.id)
         if guess:
             correct = guess.suspect_name == room.murderer_name
@@ -93,8 +116,12 @@ async def _run_mm_intro(room) -> None:
             ("Examine your clues. Find the truth.", "mm-examine.mp3"),
             ("The game is starting now.", "mm-starting.mp3"),
         ]
+        room.skip_intro = asyncio.Event()
         for text, sound in narration:
+            if room.skip_intro.is_set():
+                break
             await _mm_narrate(room, text, sound)
+        room.skip_intro = None
 
         # Auto-start round 1
         now = datetime.now(timezone.utc)
@@ -122,14 +149,21 @@ async def _finish_game(room) -> None:
         room.timer_task = None
 
     leaderboard = _build_leaderboard(room)
-    await broadcast(
-        room,
-        "game_over",
-        {
-            "murderer": room.murderer_name,
-            "leaderboard": [e.model_dump() for e in leaderboard],
-        },
-    )
+    data = {
+        "murderer": room.murderer_name,
+        "leaderboard": [e.model_dump() for e in leaderboard],
+    }
+    if room.traitor_mode:
+        caught, correct, total = _traitor_outcome(room)
+        data.update(
+            {
+                "traitor_mode": True,
+                "murderer_caught": caught,
+                "detectives_correct": correct,
+                "detectives_total": total,
+            }
+        )
+    await broadcast(room, "game_over", data)
 
 
 async def _advance_round(room) -> None:
@@ -235,6 +269,22 @@ async def start_game(
     room.clue_round_assignments = puzzle.clue_round_assignments
     room.phase = GamePhase.PLAYING
     room.round_durations = [req.round_minutes * 60] * 3
+
+    # Traitor mode: pull the solution chain off the murderer's card so they
+    # can bluff, identify which player is the murderer, and re-assign rounds.
+    room.traitor_mode = bool(req.traitor_mode)
+    if room.traitor_mode and room.murderer_name:
+        rng = random.Random()
+        rebalance_cards_for_traitor(
+            room.cards, puzzle.murder_clues, room.murderer_name, rng
+        )
+        room.clue_round_assignments = assign_rounds(
+            room.cards, puzzle.murder_clues, rng=rng
+        )
+        murderer = next(
+            (p for p in room.players if p.name == room.murderer_name), None
+        )
+        room.murderer_player_id = murderer.id if murderer else None
 
     await broadcast(room, "game_started", {
         "message": "The game has begun!",
@@ -350,6 +400,7 @@ async def get_card(code: str, x_player_id: str = Header(...)) -> PlayerCardRespo
     return PlayerCardResponse(
         character_name=card.character_name,
         clues=clues,
+        is_murderer=room.traitor_mode and x_player_id == room.murderer_player_id,
     )
 
 
@@ -373,6 +424,9 @@ async def make_guess(
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
 
+    if room.traitor_mode and player.id == room.murderer_player_id:
+        raise HTTPException(status_code=403, detail="The murderer cannot make an accusation")
+
     if player.id in room.guesses:
         raise HTTPException(status_code=400, detail="Already guessed")
 
@@ -389,8 +443,11 @@ async def make_guess(
         },
     )
 
-    # Auto-end if all players have guessed
-    if len(room.guesses) >= len(room.players):
+    # Auto-end once everyone who can guess has (murderer doesn't guess in traitor mode)
+    expected_guessers = len(room.players)
+    if room.traitor_mode and room.murderer_player_id:
+        expected_guessers -= 1
+    if len(room.guesses) >= expected_guessers:
         await _finish_game(room)
 
     return GuessResponse(
@@ -445,6 +502,8 @@ async def reset_game(code: str, x_player_id: str = Header(...)) -> dict:
     room.current_round = 0
     room.guesses = {}
     room.narration_ack = None
+    room.traitor_mode = False
+    room.murderer_player_id = None
 
     await broadcast(room, "game_reset", {})
     return {"status": "reset"}
@@ -459,6 +518,9 @@ async def get_results(code: str) -> ResultsResponse:
         raise HTTPException(status_code=400, detail="Game not finished yet")
 
     leaderboard = _build_leaderboard(room)
+    caught = correct = total = None
+    if room.traitor_mode:
+        caught, correct, total = _traitor_outcome(room)
     return ResultsResponse(
         murderer_name=room.murderer_name or "",
         murder_weapon=room.murder_weapon or "",
@@ -467,9 +529,14 @@ async def get_results(code: str) -> ResultsResponse:
             ClueInfo(type=c["type"], text=c["text"])
             for c in (room.murder_clue_dicts or [])
         ],
+        traitor_mode=room.traitor_mode,
+        murderer_caught=caught,
+        detectives_correct=correct or 0,
+        detectives_total=total or 0,
     )
 
 
 # Keep import at bottom to avoid circular import issues
 from ...puzzle.pipeline import generate_puzzle  # noqa: E402
 from ...puzzle.relabel import load_puzzle  # noqa: E402
+from ...puzzle.distributor import assign_rounds, rebalance_cards_for_traitor  # noqa: E402

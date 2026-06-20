@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createGame, getGameInfo, joinGame } from "../api/http";
 import { useWWActions } from "../context/GameContext";
+import HostLeftBanner from "@shared/components/HostLeftBanner";
+import { saveSession } from "@shared/session";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -19,9 +21,7 @@ export default function HomePage() {
     try {
       const hostName = name.trim() || "Host";
       const { code, host_id } = await createGame(hostName);
-      localStorage.setItem("ww_player_id", host_id);
-      localStorage.setItem("ww_game_code", code);
-      localStorage.setItem("ww_is_host", "true");
+      saveSession("ww", { playerId: host_id, code, isHost: true });
       setGame(code, host_id, hostName, true);
       navigate(`/lobby/${code}`);
     } catch (e) {
@@ -40,9 +40,7 @@ export default function HomePage() {
     try {
       const code = joinCode.trim().toUpperCase();
       const { player_id } = await joinGame(code, name.trim());
-      localStorage.setItem("ww_player_id", player_id);
-      localStorage.setItem("ww_game_code", code);
-      localStorage.setItem("ww_is_host", "false");
+      saveSession("ww", { playerId: player_id, code, isHost: false });
       setGame(code, player_id, name.trim(), false);
       const info = await getGameInfo(code);
       setPlayers(info.players);
@@ -57,6 +55,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
+        <HostLeftBanner />
         <div className="text-center">
           <p className="text-mystery-400 uppercase tracking-wider text-sm">Party Mode</p>
           <h1 className="text-5xl text-mystery-100 font-bold">Lobo 🐺</h1>

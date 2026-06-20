@@ -412,8 +412,12 @@ async def _run_intro(room: PDRoom) -> None:
             ("Check your phone now to see your role.", "pd-check-role.mp3"),
             ("The game begins!", "pd-begin.mp3"),
         ]
+        room.skip_intro = asyncio.Event()
         for text, sound in narration:
+            if room.skip_intro.is_set():
+                break
             await _pd_narrate(room, text, sound)
+        room.skip_intro = None
 
         await broadcast(room, "intro_done", {})
         await _run_game(room)

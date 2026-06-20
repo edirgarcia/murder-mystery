@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useFQ, useFQActions } from "../context/GameContext";
+import { useFQ, useFQActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getGameInfo, nextQuestion, resetGame, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
 import type { RoundResult } from "../types/game";
+import SkipIntroButton from "@shared/components/SkipIntroButton";
 import QuestionCard from "../components/QuestionCard";
 import CountdownBar from "../components/CountdownBar";
 import ScoreBoard from "../components/ScoreBoard";
@@ -14,19 +15,12 @@ export default function DashboardPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useFQ();
-  const { setGame, setPlayers, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setScores, setPointsToWin, setHostPaced, resetGame: resetGameState } = useFQActions();
+  const { setPlayers, addPlayer, setPhase, newQuestion, setRoundResult, setWinner, setScores, setPointsToWin, setHostPaced, resetGame: resetGameState } = useFQActions();
   const [narrationText, setNarrationText] = useState<string | null>(null);
   const sendAckRef = useRef<() => void>(() => {});
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Restore from localStorage
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("fq_player_id");
-    const storedCode = localStorage.getItem("fq_game_code");
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "Host", true);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   // Load game info
   useEffect(() => {
@@ -72,6 +66,7 @@ export default function DashboardPage() {
           const sound = event.data.sound as string | undefined;
           if (sound) {
             const audio = new Audio(`/funny-questions/audio/${sound}`);
+            introAudioRef.current = audio;
             audio.onended = () => sendAckRef.current();
             audio.onerror = () => sendAckRef.current();
             audio.play().catch(() => sendAckRef.current());
@@ -118,6 +113,17 @@ export default function DashboardPage() {
     }
   };
 
+  const skipIntro = () => {
+    if (introAudioRef.current) {
+      introAudioRef.current.pause();
+      introAudioRef.current = null;
+    }
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "skip_intro" }));
+    }
+  };
+
   // Finished — only after game_over event (let reveal phase play out first)
   if (state.phase === "finished") {
     return (
@@ -152,6 +158,7 @@ export default function DashboardPage() {
             <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
               {narrationText || ""}
             </p>
+            {narrationText && <SkipIntroButton onSkip={skipIntro} />}
           </div>
         )}
         <div className={`mx-auto space-y-6 ${state.roundPhase === "reveal" ? "max-w-4xl" : "max-w-lg"}`}>

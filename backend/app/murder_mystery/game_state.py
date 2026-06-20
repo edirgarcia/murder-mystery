@@ -26,6 +26,9 @@ class MurderRoom(BaseGameRoom):
     cards: list[PlayerCard] | None = None
     murder_clue_dicts: list[dict] | None = None
     difficulty: str | None = None
+    # Traitor mode: the murderer is told who they are and bluffs to evade
+    traitor_mode: bool = False
+    murderer_player_id: str | None = None
     # Rounds & timer
     started_at: datetime | None = None  # overall game start (for scoring)
     current_round: int = 0  # 0=not started, 1-3 during play

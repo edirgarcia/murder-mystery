@@ -12,7 +12,7 @@ import {
 import CountdownBar from "../components/CountdownBar";
 import ReviewCategoryPanel from "../components/ReviewCategoryPanel";
 import ScoreBoard from "../components/ScoreBoard";
-import { useBasta, useBastaActions } from "../context/GameContext";
+import { useBasta, useBastaActions, useRestoreSession } from "../context/GameContext";
 import type { RoundResult } from "../types/game";
 
 function normalizeAnswer(value: string) {
@@ -28,7 +28,6 @@ export default function PlayPage() {
   const navigate = useNavigate();
   const { state } = useBasta();
   const {
-    setGame,
     setPhase,
     setPlayers,
     newRound,
@@ -47,15 +46,7 @@ export default function PlayPage() {
   const [vetoedKeys, setVetoedKeys] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ba_player_id");
-    const storedCode = localStorage.getItem("ba_game_code");
-    const isHost = localStorage.getItem("ba_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

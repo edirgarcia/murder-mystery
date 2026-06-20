@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useFQ, useFQActions } from "../context/GameContext";
+import { useFQ, useFQActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getScores, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
@@ -10,18 +10,9 @@ export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useFQ();
-  const { setScores, setGame, resetGame: resetGameState } = useFQActions();
+  const { setScores, resetGame: resetGameState } = useFQActions();
 
-  // Restore from localStorage
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("fq_player_id");
-    const storedCode = localStorage.getItem("fq_game_code");
-    const isHost = localStorage.getItem("fq_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   // Load scores if we don't have them
   useEffect(() => {

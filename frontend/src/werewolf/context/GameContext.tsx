@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { GamePhase } from "@shared/types/game";
+import { useSessionRestore } from "@shared/hooks/useRestoreSession";
 import type { DaySubPhase, NightSubPhase, Role, WitchPrompt, WolfPackMember, WWPlayerInfo, WinCondition } from "../types/game";
 
 interface WWState {
@@ -171,6 +172,12 @@ export function useWW() {
   const ctx = useContext(WWContext);
   if (!ctx) throw new Error("useWW must be used within WWProvider");
   return ctx;
+}
+
+export function useRestoreSession(code: string | undefined) {
+  const { state } = useWW();
+  const { setGame } = useWWActions();
+  useSessionRestore("ww", code, state.playerId, setGame);
 }
 
 export function useWWActions() {

@@ -4,27 +4,19 @@ import { QRCodeSVG } from "qrcode.react";
 import type { WSEvent } from "@shared/types/game";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { buildWsUrl, getGameInfo, startGame } from "../api/http";
-import { useWW, useWWActions } from "../context/GameContext";
+import { useWW, useWWActions, useRestoreSession } from "../context/GameContext";
 import PlayerGrid from "../components/PlayerGrid";
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useWW();
-  const { setGame, setPlayers, addPlayer, setPhase, setError } = useWWActions();
+  const { setPlayers, addPlayer, setPhase, setError } = useWWActions();
 
   const [discussionSeconds, setDiscussionSeconds] = useState(90);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ww_player_id");
-    const storedCode = localStorage.getItem("ww_game_code");
-    const isHost = localStorage.getItem("ww_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

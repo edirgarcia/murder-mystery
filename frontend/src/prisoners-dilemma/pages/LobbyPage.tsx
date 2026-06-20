@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { buildWsUrl, getGameInfo, startGame } from "../api/http";
-import { usePD, usePDActions } from "../context/GameContext";
+import { usePD, usePDActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import type { WSEvent } from "@shared/types/game";
 import PlayerList from "@shared/components/PlayerList";
@@ -11,20 +11,12 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = usePD();
-  const { addPlayer, setGame, setPhase, setPlayers, setTeamScores, setError } = usePDActions();
+  const { addPlayer, setPhase, setPlayers, setTeamScores, setError } = usePDActions();
   const [votingSeconds, setVotingSeconds] = useState(45);
   const [accusationSeconds, setAccusationSeconds] = useState(20);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("pd_player_id");
-    const storedCode = localStorage.getItem("pd_game_code");
-    const isHost = localStorage.getItem("pd_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

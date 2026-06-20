@@ -3,11 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { WSEvent } from "@shared/types/game";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { buildWsUrl, getPlayerState } from "../api/http";
-import { useWW, useWWActions } from "../context/GameContext";
+import { useWW, useWWActions, useRestoreSession } from "../context/GameContext";
 import CountdownBar from "../components/CountdownBar";
 import DeathAnnouncement from "../components/DeathAnnouncement";
 import GameNarration from "../components/GameNarration";
 import PlayerGrid from "../components/PlayerGrid";
+import SkipIntroButton from "@shared/components/SkipIntroButton";
 import type { Role, WWPrivateState } from "../types/game";
 
 export default function DashboardPage() {
@@ -15,7 +16,6 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { state } = useWW();
   const {
-    setGame,
     setPhase,
     setPlayers,
     setPhaseDetail,
@@ -26,16 +26,14 @@ export default function DashboardPage() {
   } = useWWActions();
 
   const [introText, setIntroText] = useState<string | null>(null);
+  // Skip is only offered during the opening rules narration, not the
+  // functional in-game phase narration (close eyes, role reveal, etc.).
+  const [introActive, setIntroActive] = useState(false);
+  const introPassedRef = useRef(false);
   const sendAckRef = useRef<() => void>(() => {});
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ww_player_id");
-    const storedCode = localStorage.getItem("ww_game_code");
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "Host", true);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code || !state.playerId) return;
@@ -69,12 +67,17 @@ export default function DashboardPage() {
     if (event.event === "intro_narration") {
       if (event.data.clear_overlay) {
         setIntroText(null);
+        // Role reveal — the opening rules narration is over.
+        introPassedRef.current = true;
+        setIntroActive(false);
       } else {
         setIntroText(event.data.text as string);
+        if (!introPassedRef.current) setIntroActive(true);
       }
       const sound = event.data.sound as string | undefined;
       if (sound) {
         const audio = new Audio(`/werewolf/audio/${sound}`);
+        introAudioRef.current = audio;
         audio.onended = () => sendAckRef.current();
         audio.onerror = () => sendAckRef.current();
         audio.play().catch(() => sendAckRef.current());
@@ -82,6 +85,8 @@ export default function DashboardPage() {
     }
     if (event.event === "phase_changed") {
       setIntroText(null);
+      introPassedRef.current = true;
+      setIntroActive(false);
       setPhase("playing");
       setPhaseDetail(
         (event.data.night_sub_phase as WWPrivateState["night_sub_phase"]) ?? null,
@@ -120,6 +125,17 @@ export default function DashboardPage() {
     }
   };
 
+  const skipIntro = () => {
+    if (introAudioRef.current) {
+      introAudioRef.current.pause();
+      introAudioRef.current = null;
+    }
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "skip_intro" }));
+    }
+  };
+
   return (
     <div className="min-h-screen px-4 py-6">
       {introText !== null && (
@@ -127,6 +143,7 @@ export default function DashboardPage() {
           <p className="animate-pulse text-center text-3xl font-bold text-mystery-100 px-6 leading-relaxed md:text-5xl">
             {introText}
           </p>
+          {introActive && <SkipIntroButton onSkip={skipIntro} />}
         </div>
       )}
       <div className="max-w-3xl mx-auto space-y-4">

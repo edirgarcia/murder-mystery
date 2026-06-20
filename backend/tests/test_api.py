@@ -362,3 +362,96 @@ class TestGameFlow:
 
         res = client.get(f"/api/mm/games/{code}/results")
         assert res.status_code == 400
+
+    def _start_traitor_game(self, client, code, host_id):
+        return client.post(
+            f"/api/mm/games/{code}/start",
+            json={"difficulty": "medium", "round_minutes": 5, "traitor_mode": True},
+            headers={"X-Player-Id": host_id},
+        )
+
+    def test_traitor_mode_flow(self, client):
+        code, host_id, player_ids = self._create_full_game(client)
+        assert self._start_traitor_game(client, code, host_id).status_code == 200
+
+        # Exactly one player is flagged as the murderer, and the murderer's
+        # card holds none of the solution-chain clues.
+        murderer_pid = None
+        murderer_name = None
+        murderer_clue_texts: set[str] = set()
+        for pid in player_ids:
+            card = client.get(
+                f"/api/mm/games/{code}/card", headers={"X-Player-Id": pid}
+            ).json()
+            if card["is_murderer"]:
+                assert murderer_pid is None, "more than one murderer flagged"
+                murderer_pid = pid
+                murderer_name = card["character_name"]
+        assert murderer_pid is not None
+        detective_ids = [p for p in player_ids if p != murderer_pid]
+
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)  # round 2
+
+        # Murderer cannot accuse.
+        blocked = client.post(
+            f"/api/mm/games/{code}/guess",
+            json={"suspect_name": murderer_name},
+            headers={"X-Player-Id": murderer_pid},
+        )
+        assert blocked.status_code == 403
+
+        # All detectives correctly accuse the murderer -> caught.
+        for pid in detective_ids:
+            res = client.post(
+                f"/api/mm/games/{code}/guess",
+                json={"suspect_name": murderer_name},
+                headers={"X-Player-Id": pid},
+            )
+            assert res.status_code == 200
+
+        results = client.get(f"/api/mm/games/{code}/results").json()
+        assert results["traitor_mode"] is True
+        assert results["murderer_name"] == murderer_name
+        assert results["detectives_total"] == len(detective_ids)
+        assert results["detectives_correct"] == len(detective_ids)
+        assert results["murderer_caught"] is True
+        # Murderer is omitted from the leaderboard (they never guess).
+        assert len(results["leaderboard"]) == len(detective_ids)
+        assert all(e["player_name"] != murderer_name for e in results["leaderboard"])
+
+        # Murderer's full card (finished phase) shares no clue with the chain.
+        murderer_card = client.get(
+            f"/api/mm/games/{code}/card", headers={"X-Player-Id": murderer_pid}
+        ).json()
+        murderer_clue_texts = {c["text"] for c in murderer_card["clues"]}
+        chain_texts = {c["text"] for c in results["murder_clues"]}
+        assert murderer_clue_texts.isdisjoint(chain_texts)
+
+    def test_traitor_mode_murderer_can_get_away(self, client):
+        code, host_id, player_ids = self._create_full_game(client)
+        self._start_traitor_game(client, code, host_id)
+
+        murderer_pid = None
+        for pid in player_ids:
+            card = client.get(
+                f"/api/mm/games/{code}/card", headers={"X-Player-Id": pid}
+            ).json()
+            if card["is_murderer"]:
+                murderer_pid = pid
+        detective_ids = [p for p in player_ids if p != murderer_pid]
+
+        self._begin_game(client, code, host_id)
+        self._advance_round(client, code, host_id)
+
+        # Every detective guesses wrong -> murderer gets away.
+        for pid in detective_ids:
+            client.post(
+                f"/api/mm/games/{code}/guess",
+                json={"suspect_name": "Nobody At All"},
+                headers={"X-Player-Id": pid},
+            )
+
+        results = client.get(f"/api/mm/games/{code}/results").json()
+        assert results["murderer_caught"] is False
+        assert results["detectives_correct"] == 0

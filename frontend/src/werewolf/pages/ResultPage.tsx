@@ -1,23 +1,15 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getPlayerState } from "../api/http";
-import { useWW, useWWActions } from "../context/GameContext";
+import { useWW, useWWActions, useRestoreSession } from "../context/GameContext";
 
 export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useWW();
-  const { setGame, setPlayers, setWinner, setError } = useWWActions();
+  const { setPlayers, setWinner, setError } = useWWActions();
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ww_player_id");
-    const storedCode = localStorage.getItem("ww_game_code");
-    const isHost = localStorage.getItem("ww_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code || !state.playerId) return;

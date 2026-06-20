@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGame, useGameActions } from "../context/GameContext";
+import { useGame, useGameActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { makeGuess, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
@@ -37,6 +37,9 @@ export default function GuessPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // Restore identity from localStorage so a mid-game refresh can reconnect
+  useRestoreSession(code);
 
   // Redirect back if somehow reached during round 1
   useEffect(() => {

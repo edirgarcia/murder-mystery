@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createGame, getGameInfo, joinGame } from "../api/http";
 import { usePDActions } from "../context/GameContext";
+import { saveSession } from "@shared/session";
+import HostLeftBanner from "@shared/components/HostLeftBanner";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -18,9 +20,7 @@ export default function HomePage() {
     setError("");
     try {
       const { code, host_id } = await createGame(hostName);
-      localStorage.setItem("pd_player_id", host_id);
-      localStorage.setItem("pd_game_code", code);
-      localStorage.setItem("pd_is_host", "true");
+      saveSession("pd", { playerId: host_id, code, isHost: true });
       setGame(code, host_id, hostName, true);
       navigate(`/lobby/${code}`);
     } catch (err: any) {
@@ -38,9 +38,7 @@ export default function HomePage() {
     try {
       const code = joinCode.trim().toUpperCase();
       const { player_id } = await joinGame(code, name.trim());
-      localStorage.setItem("pd_player_id", player_id);
-      localStorage.setItem("pd_game_code", code);
-      localStorage.setItem("pd_is_host", "false");
+      saveSession("pd", { playerId: player_id, code, isHost: false });
       setGame(code, player_id, name.trim(), false);
       const info = await getGameInfo(code);
       setPlayers(info.players);
@@ -54,6 +52,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.18),_transparent_36%),radial-gradient(circle_at_bottom,_rgba(220,38,38,0.18),_transparent_40%)] px-4 py-10">
+      <HostLeftBanner />
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-4xl items-center">
         <div className="grid w-full gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="space-y-5">

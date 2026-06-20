@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getGameInfo } from "../api/http";
-import { usePD, usePDActions } from "../context/GameContext";
+import { usePD, usePDActions, useRestoreSession } from "../context/GameContext";
 
 function winnerLabel(winner: "red" | "blue" | "draw" | "nobody" | null) {
   if (winner === "red") return "Red Team Wins";
@@ -15,17 +15,9 @@ export default function ResultPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = usePD();
-  const { setGame, setPhase, setPlayers, setTeamScores } = usePDActions();
+  const { setPhase, setPlayers, setTeamScores } = usePDActions();
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("pd_player_id");
-    const storedCode = localStorage.getItem("pd_game_code");
-    const isHost = localStorage.getItem("pd_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, setGame, state.playerId]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;

@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGame, useGameActions } from "../context/GameContext";
+import { useGame, useGameActions, useRestoreSession } from "../context/GameContext";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import { getGameInfo, buildWsUrl } from "../api/http";
 import type { WSEvent } from "@shared/types/game";
@@ -10,18 +10,10 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useGame();
-  const { setGame, setPlayers, addPlayer, setPhase, setError, setRoundInfo } = useGameActions();
+  const { setPlayers, addPlayer, setPhase, setError, setRoundInfo } = useGameActions();
 
-  // Restore game state from localStorage (handles page refresh / HMR)
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("player_id");
-    const storedCode = localStorage.getItem("game_code");
-    const isHost = localStorage.getItem("is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, state.playerId, setGame]);
+  // Restore identity from localStorage (handles page refresh / HMR)
+  useRestoreSession(code);
 
   // Redirect hosts to dashboard
   useEffect(() => {

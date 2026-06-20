@@ -21,7 +21,8 @@ export async function startGame(
   code: string,
   hostId: string,
   difficulty?: Difficulty,
-  roundMinutes?: number
+  roundMinutes?: number,
+  traitorMode?: boolean
 ): Promise<void> {
   await request(`${BASE}/${code}/start`, {
     method: "POST",
@@ -29,6 +30,7 @@ export async function startGame(
     body: JSON.stringify({
       difficulty: difficulty ?? "medium",
       round_minutes: roundMinutes ?? 5,
+      traitor_mode: traitorMode ?? false,
     }),
   });
 }

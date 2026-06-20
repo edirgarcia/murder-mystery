@@ -5,7 +5,7 @@ import PlayerList from "@shared/components/PlayerList";
 import { useWebSocket } from "@shared/hooks/useWebSocket";
 import type { WSEvent } from "@shared/types/game";
 import { buildWsUrl, getGameInfo, startGame } from "../api/http";
-import { useBasta, useBastaActions } from "../context/GameContext";
+import { useBasta, useBastaActions, useRestoreSession } from "../context/GameContext";
 
 const DEFAULT_CATEGORIES = [
   "Nombre",
@@ -22,22 +22,14 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { state } = useBasta();
-  const { setGame, setPlayers, addPlayer, setPhase, setConfig, setError } = useBastaActions();
+  const { setPlayers, addPlayer, setPhase, setConfig, setError } = useBastaActions();
   const [selectedCategories, setSelectedCategories] = useState(DEFAULT_CATEGORIES);
   const [roundsToPlay, setRoundsToPlay] = useState(5);
   const [roundSeconds, setRoundSeconds] = useState(15);
   const [hostPaced, setHostPaced] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    if (state.playerId || !code) return;
-    const storedId = localStorage.getItem("ba_player_id");
-    const storedCode = localStorage.getItem("ba_game_code");
-    const isHost = localStorage.getItem("ba_is_host") === "true";
-    if (storedId && storedCode?.toUpperCase() === code.toUpperCase()) {
-      setGame(code, storedId, "", isHost);
-    }
-  }, [code, state.playerId, setGame]);
+  useRestoreSession(code);
 
   useEffect(() => {
     if (!code) return;
