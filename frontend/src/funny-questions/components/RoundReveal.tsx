@@ -14,6 +14,15 @@ export default function RoundReveal({ result }: Props) {
   const maxVotes = Math.max(...voteCounts.map((e) => e.count), 1);
   const totalVotes = voteCounts.reduce((sum, e) => sum + e.count, 0);
 
+  // Everyone tied for the top scored this round, so highlight all of them
+  const topVoted = result.top_voted_names ?? [];
+  const topSet = new Set(topVoted);
+  const isTie = topVoted.length > 1;
+  const tiedNames =
+    topVoted.length > 1
+      ? `${topVoted.slice(0, -1).join(", ")} and ${topVoted[topVoted.length - 1]}`
+      : "";
+
   return (
     <div className="space-y-5">
       {/* Question */}
@@ -30,15 +39,15 @@ export default function RoundReveal({ result }: Props) {
       <div className="bg-mystery-800 rounded-2xl p-5 shadow-xl">
         <h4 className="text-mystery-200 font-bold text-lg mb-4">Who Got Votes?</h4>
         <div className="space-y-3">
-          {voteCounts.map(({ target, count, voters }, i) => {
+          {voteCounts.map(({ target, count, voters }) => {
             const pct = (count / maxVotes) * 100;
-            const isTop = i === 0;
+            const isTop = topSet.has(target);
             return (
               <div key={target}>
                 <div className="flex justify-between items-end mb-1">
                   <span className={`font-semibold ${isTop ? "text-mystery-100 text-lg" : "text-mystery-200"}`}>
                     {target}
-                    {isTop && result.most_voted_name === target ? " \u{1F3AF}" : ""}
+                    {isTop ? " \u{1F3AF}" : ""}
                   </span>
                   <span className="text-mystery-300 font-bold text-lg tabular-nums">
                     {count} vote{count !== 1 ? "s" : ""}
@@ -61,6 +70,12 @@ export default function RoundReveal({ result }: Props) {
             );
           })}
         </div>
+        {isTie && (
+          <p className="text-mystery-300 text-sm text-center mt-4">
+            {"\u{1F91D}"} It's a tie between {tiedNames} — everyone who voted for
+            any of them scores.
+          </p>
+        )}
         {totalVotes === 0 && (
           <p className="text-mystery-400 text-center py-4">No votes this round!</p>
         )}

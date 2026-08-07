@@ -48,6 +48,7 @@ class RoundResultResponse(BaseModel):
     question: str
     most_voted: str | None
     most_voted_name: str | None
+    top_voted_names: list[str]  # every name tied for the top, all of whom scored
     vote_breakdown: dict[str, list[str]]  # {target_name: [voter_names]}
     point_deltas: dict[str, int]  # {player_name: delta}
     scores: dict[str, int]  # {player_name: total}

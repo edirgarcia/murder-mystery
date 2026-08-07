@@ -12,6 +12,9 @@ class RoundResult:
     points: dict[str, int]
     # player_id who got the most votes (None if tie)
     most_voted: str | None
+    # every player tied for the most votes, in room order. One entry on a clean
+    # round, two or more on a tie, empty when the top count is too low to pay out.
+    top_voted: list[str]
     # {player_id: list of voter ids}
     vote_breakdown: dict[str, list[str]]
     # player_id who earns shame this round (None if nobody)
@@ -36,8 +39,12 @@ def score_round(
         RoundResult with point deltas, vote breakdown, and shame updates.
 
     Scoring rules:
-        +1 if you voted for the majority pick
-        +2 if you got most votes AND voted for yourself
+        +1 if you voted for a top-voted player. On a tie, every tied player
+            counts, so both camps of a split room score -- picking one of two
+            co-leaders is still a correct read of the room. A tie only pays out
+            if the tied count is at least 2: when everyone lands on a different
+            target nobody has corroboration, so nobody scores.
+        +2 if you got most votes outright AND voted for yourself
         -1 if you didn't vote in time
         Mark of Shame: self-vote but nobody else votes for you → shame
         While shamed, you can't earn points (deltas clamped to <= 0)
@@ -51,23 +58,24 @@ def score_round(
         if target in vote_breakdown:
             vote_breakdown[target].append(voter)
 
-    # Find the majority pick (most votes received)
-    max_votes = 0
-    most_voted: str | None = None
-    tied = False
-    for target, voters in vote_breakdown.items():
-        if len(voters) > max_votes:
-            max_votes = len(voters)
-            most_voted = target
-            tied = False
-        elif len(voters) == max_votes and max_votes > 0:
-            tied = True
+    # Find the top vote count and everyone who reached it (room order). With no
+    # votes at all there is no top, so nobody is tied for it.
+    max_votes = max((len(v) for v in vote_breakdown.values()), default=0)
+    tied_at_top = (
+        [pid for pid in player_ids if len(vote_breakdown[pid]) == max_votes]
+        if max_votes > 0
+        else []
+    )
 
-    if tied or max_votes == 0:
-        most_voted = None
+    # A single leader wins outright; two or more is a tie with no outright winner.
+    most_voted: str | None = tied_at_top[0] if len(tied_at_top) == 1 else None
 
-    # Determine majority target for +1 bonus
-    majority_target = most_voted
+    # Targets that pay out the +1: an outright winner always counts, and a tie
+    # needs a count of 2+ to count as a read of the room -- one vote each is
+    # scatter, not consensus, so it pays nobody.
+    pays_out = most_voted is not None or max_votes >= 2
+    top_voted = tied_at_top if pays_out else []
+    scoring_targets = set(top_voted)
 
     # Score each player
     for pid in player_ids:
@@ -79,8 +87,8 @@ def score_round(
         delta = 0
         voted_for = votes[pid]
 
-        # +1 if voted for majority pick
-        if majority_target and voted_for == majority_target:
+        # +1 if voted for a top-voted player (either camp on a tie)
+        if voted_for in scoring_targets:
             delta += 1
 
         points[pid] = delta
@@ -127,6 +135,7 @@ def score_round(
     return RoundResult(
         points=points,
         most_voted=most_voted,
+        top_voted=top_voted,
         vote_breakdown=vote_breakdown,
         new_shame=new_shame,
         shame_cleared=shame_cleared,

@@ -29,6 +29,7 @@ export interface RoundResult {
   question: string;
   most_voted: string | null;
   most_voted_name: string | null;
+  top_voted_names: string[];
   vote_breakdown: Record<string, string[]>;
   point_deltas: Record<string, number>;
   scores: Record<string, number>;

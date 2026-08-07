@@ -65,15 +65,66 @@ class TestScoring:
         assert result.points["p3"] == -1
 
     def test_tie_no_majority(self):
-        """Tied votes means no majority and no most_voted bonus/penalty."""
+        """Tied votes means no outright winner and no self-vote bonus."""
         votes = {"p1": "p2", "p2": "p1", "p3": "p3"}
         result = score_round(votes, ["p1", "p2", "p3"], None)
-        # All have 1 vote → tie → no majority
+        # All have 1 vote → tie → no outright winner
         assert result.most_voted is None
-        # No majority bonus for anyone, no most_voted penalty
+        # One vote each is scatter, not consensus → nobody scores
+        assert result.top_voted == []
         assert result.points["p1"] == 0
         assert result.points["p2"] == 0
         assert result.points["p3"] == 0
+
+    def test_tie_at_two_pays_both_camps(self):
+        """On a tie of 2+, everyone who voted for either co-leader gets +1."""
+        # p3 gets votes from p1+p2, p4 gets votes from p5+p6 → 2-2 tie
+        pids = ["p1", "p2", "p3", "p4", "p5", "p6"]
+        votes = {"p1": "p3", "p2": "p3", "p5": "p4", "p6": "p4", "p3": "p1", "p4": "p2"}
+        result = score_round(votes, pids, None)
+        assert result.most_voted is None  # no outright winner
+        assert result.top_voted == ["p3", "p4"]  # room order
+        # Both camps read the room correctly → +1 each
+        assert result.points["p1"] == 1
+        assert result.points["p2"] == 1
+        assert result.points["p5"] == 1
+        assert result.points["p6"] == 1
+        # p3 and p4 voted for 1-vote targets → no points
+        assert result.points["p3"] == 0
+        assert result.points["p4"] == 0
+
+    def test_tie_does_not_award_self_vote_bonus(self):
+        """A tied co-leader who self-voted gets the +1 only, not the +3."""
+        pids = ["p1", "p2", "p3", "p4"]
+        # p1 self-votes and p2 backs them (2); p3 gets p4's vote plus... make it 2-2
+        votes = {"p1": "p1", "p2": "p1", "p3": "p3", "p4": "p3"}
+        result = score_round(votes, pids, None)
+        assert result.most_voted is None
+        assert result.top_voted == ["p1", "p3"]
+        # p1 self-voted into a tied lead: +1 for picking a top target, no +2
+        assert result.points["p1"] == 1
+        assert result.points["p3"] == 1
+        assert result.points["p2"] == 1
+        assert result.points["p4"] == 1
+        # Corroborated self-votes never earn shame
+        assert result.new_shame is None
+
+    def test_clean_round_reports_single_top_voted(self):
+        """A clean round exposes exactly one top_voted entry."""
+        votes = {"p1": "p3", "p2": "p3", "p3": "p1"}
+        result = score_round(votes, ["p1", "p2", "p3"], None)
+        assert result.most_voted == "p3"
+        assert result.top_voted == ["p3"]
+
+    def test_scoring_and_shame_are_mutually_exclusive(self):
+        """A lone self-voter is never paid for the vote that shames them."""
+        pids = ["p1", "p2", "p3", "p4", "p5"]
+        # p1 self-votes alone; p2/p3 both back p4 so there is a real leader
+        votes = {"p1": "p1", "p2": "p4", "p3": "p4", "p4": "p2", "p5": "p3"}
+        result = score_round(votes, pids, None)
+        assert result.most_voted == "p4"
+        assert result.new_shame == "p1"
+        assert result.points["p1"] == 0  # shamed, not rewarded
 
     def test_shame_earned(self):
         """Self-voting with no other votes earns shame."""
