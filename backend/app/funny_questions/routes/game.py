@@ -340,6 +340,7 @@ async def _run_game(room) -> None:
             name_scores = {id_to_name.get(pid, pid): score for pid, score in room.scores.items()}
 
             most_voted_name = id_to_name.get(result.most_voted, None) if result.most_voted else None
+            top_voted_names = [id_to_name.get(pid, pid) for pid in result.top_voted]
             shame_name = id_to_name.get(room.shame_holder, None) if room.shame_holder else None
             prev_shame_name = id_to_name.get(prev_shame_holder, None) if prev_shame_holder else None
 
@@ -357,6 +358,7 @@ async def _run_game(room) -> None:
                 "question": question.text,
                 "most_voted": result.most_voted,
                 "most_voted_name": most_voted_name,
+                "top_voted_names": top_voted_names,
                 "vote_breakdown": name_vote_breakdown,
                 "point_deltas": name_deltas,
                 "scores": name_scores,
