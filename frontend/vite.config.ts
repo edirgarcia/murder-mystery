@@ -2,6 +2,17 @@ import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
+// Every game is a separate SPA served under /<slug>/ from <slug>.html.
+// Adding a game = adding its slug here (plus the backend GameRegistration).
+const GAMES = [
+  "murder-mystery",
+  "funny-questions",
+  "werewolf",
+  "prisoners-dilemma",
+  "basta",
+  "trading-city",
+];
+
 function multiSpaFallback(): Plugin {
   return {
     name: "multi-spa-fallback",
@@ -15,16 +26,9 @@ function multiSpaFallback(): Plugin {
         if (url.includes("/api/") || url.includes(".") || url.startsWith("/@")) {
           return next();
         }
-        if (url.startsWith("/murder-mystery")) {
-          req.url = "/murder-mystery.html";
-        } else if (url.startsWith("/funny-questions")) {
-          req.url = "/funny-questions.html";
-        } else if (url.startsWith("/werewolf")) {
-          req.url = "/werewolf.html";
-        } else if (url.startsWith("/prisoners-dilemma")) {
-          req.url = "/prisoners-dilemma.html";
-        } else if (url.startsWith("/basta")) {
-          req.url = "/basta.html";
+        const game = GAMES.find((slug) => url.startsWith(`/${slug}`));
+        if (game) {
+          req.url = `/${game}.html`;
         }
         next();
       });
@@ -41,42 +45,21 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      input: {
-        "murder-mystery": path.resolve(__dirname, "murder-mystery.html"),
-        "funny-questions": path.resolve(__dirname, "funny-questions.html"),
-        werewolf: path.resolve(__dirname, "werewolf.html"),
-        "prisoners-dilemma": path.resolve(__dirname, "prisoners-dilemma.html"),
-        basta: path.resolve(__dirname, "basta.html"),
-      },
+      input: Object.fromEntries(
+        GAMES.map((slug) => [slug, path.resolve(__dirname, `${slug}.html`)])
+      ),
     },
   },
   server: {
-    proxy: {
-      "/murder-mystery/api": {
-        target: "http://localhost:8000",
-        ws: true,
-        rewrite: (p) => p.replace(/^\/murder-mystery/, ""),
-      },
-      "/funny-questions/api": {
-        target: "http://localhost:8000",
-        ws: true,
-        rewrite: (p) => p.replace(/^\/funny-questions/, ""),
-      },
-      "/werewolf/api": {
-        target: "http://localhost:8000",
-        ws: true,
-        rewrite: (p) => p.replace(/^\/werewolf/, ""),
-      },
-      "/prisoners-dilemma/api": {
-        target: "http://localhost:8000",
-        ws: true,
-        rewrite: (p) => p.replace(/^\/prisoners-dilemma/, ""),
-      },
-      "/basta/api": {
-        target: "http://localhost:8000",
-        ws: true,
-        rewrite: (p) => p.replace(/^\/basta/, ""),
-      },
-    },
+    proxy: Object.fromEntries(
+      GAMES.map((slug) => [
+        `/${slug}/api`,
+        {
+          target: "http://localhost:8000",
+          ws: true,
+          rewrite: (p: string) => p.replace(new RegExp(`^/${slug}`), ""),
+        },
+      ])
+    ),
   },
 });

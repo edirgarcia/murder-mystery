@@ -12,6 +12,7 @@ Players join from their phones with a 4-letter room code or QR link. Hosts run t
 | Funny Questions | `/funny-questions/` | `/api/fq/games` | "Most likely to" voting game with configurable spice levels, scoring, and shame mechanics. |
 | Werewolf | `/werewolf/` | `/api/ww/games` | Social deduction game with hidden roles, night actions, day votes, and live narration. |
 | Prisoner's Dilemma | `/prisoners-dilemma/` | `/api/pd/games` | Team trust/betrayal strategy game with hidden spies and round-by-round accusations. |
+| Trading City | `/trading-city/` | `/api/tc/games` | Economic strategy: specialised cities, hidden surplus lots, open ascending auctions, projects and a player-shaped global market. |
 
 ## Quick Start
 
@@ -46,6 +47,7 @@ Local URLs:
 - Funny Questions: `http://localhost:5173/funny-questions/`
 - Werewolf: `http://localhost:5173/werewolf/`
 - Prisoner's Dilemma: `http://localhost:5173/prisoners-dilemma/`
+- Trading City: `http://localhost:5173/trading-city/`
 - Backend API docs: `http://localhost:8000/docs`
 
 ## Running Services Manually
@@ -63,6 +65,13 @@ Frontend:
 cd frontend
 npm run dev
 ```
+
+## Developer Tools
+
+`backend/tools/` holds balance and manual-check scripts that are **not product
+code**: a Trading City economy simulator, and work-in-progress headless-Chrome
+scripts (these require Google Chrome installed locally). See
+[`backend/tools/README.md`](backend/tools/README.md).
 
 ## Tests And Checks
 

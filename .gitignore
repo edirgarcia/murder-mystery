@@ -21,3 +21,6 @@ Thumbs.db
 # Local config
 .npmrc
 
+
+# Developer tool output
+backend/tools/tc_browser/output/
